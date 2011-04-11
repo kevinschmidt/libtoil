@@ -33,7 +33,11 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			if (!(pos < src.length)) {
 				return false;
 			}
-			if (src[pos] == '@') {
+			if (src[pos] == '\n') {
+				nextToken = new Token("EOL", pos, pos+1);
+				pos = pos+1;
+				return true;
+			} else if (src[pos] == '@') {
 				int cur = pos+1;
 				while (cur < src.length && src[cur] != '@' && !Character.isWhitespace(src[cur])) {
 					cur++;
@@ -53,7 +57,7 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 				}
 			} else if (Character.isWhitespace(src[pos])) {
 				int cur = pos+1;
-				while (cur < src.length && Character.isWhitespace(src[cur])) {
+				while (cur < src.length && Character.isWhitespace(src[cur]) && src[cur] != '\n') {
 					cur++;
 				}
 				nextToken = new Token("WHITESPACE", pos, cur);
@@ -87,8 +91,8 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 	}
 	
 	public class Token {
-		String type;
-		int start, end;
+		public String type;
+		public int start, end;
 		
 		public Token(String type, int start, int end) {
 			this.type = type;

@@ -24,4 +24,14 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 		assertEquals("at-@@-at-@- -@at@- -@@-@at@- -@- -@at@- -@at@-@- -@@-@- -@-at-", output);
 	}
 
+	public void testText3() {
+		TemplateTokenizer tt = new TemplateTokenizer("this is\n a multi\nline \ntest");
+		String output = "";
+		for(TemplateTokenizer.Token t : tt) {
+			output +=t;
+			output += "-";
+//			System.out.print(t + "-");
+		}
+		assertEquals("this- -is-\n- -a- -multi-\n-line- -\n-test-", output);
+	}
 }
