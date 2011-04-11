@@ -14,7 +14,7 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 	}
 	
 	public Iterator<Token> iterator() {
-		return new TemplateTokenizerIterator();
+		return new LineContRemovalIterator(new TemplateTokenizerIterator());
 	}
 	
 	public class TemplateTokenizerIterator implements Iterator<Token> {
@@ -26,7 +26,7 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			this.nextToken = null;
 		}
 
-		boolean pump() {
+		boolean fetch() {
 			if (nextToken != null) {
 				return true;
 			}
@@ -47,20 +47,25 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 					pos = cur;
 					return true;
 				}
+				if (cur < src.length && src[cur] == '\\') { // line continuation
+					nextToken = new Token("LINECONTINUATION", pos, ++cur);
+					pos = cur;
+					return true;
+				}
 				while (cur < src.length && src[cur] != '@' && !Character.isWhitespace(src[cur])) {
 					cur++;
 				}
 				if (cur == src.length || src[cur] != '@') { // loop terminated before finding @
-					nextToken = new Token("LITERALAT", pos, pos+1);
-					pos += 1;
+					nextToken = new Token("LITERALAT", pos, ++pos);
+
 					return true;
 				} else if (cur - pos == 1) { // found "@@"
-					nextToken = new Token("LITERALAT", pos, cur+1);
-					pos = cur + 1;
+					nextToken = new Token("LITERALAT", pos, ++cur);
+					pos = cur;
 					return true;
 				} else {
-					nextToken = new Token("COMMAND", pos, cur+1);
-					pos = cur + 1;
+					nextToken = new Token("COMMAND", pos, ++cur);
+					pos = cur;
 					return true;
 				}
 			} else if (Character.isWhitespace(src[pos])) {
@@ -81,13 +86,13 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 				return true;
 			}
 		}
-
+		
 		public boolean hasNext() {
-			return nextToken != null || pump();
+			return nextToken != null || fetch();
 		}
 
 		public Token next() {
-			pump();
+			fetch();
 			Token temp = nextToken;
 			nextToken = null;
 			return temp;
@@ -97,6 +102,51 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			throw new UnsupportedOperationException();
 		}
 	}
+	
+	public class LineContRemovalIterator implements Iterator<Token> { 
+		Token nextToken;
+		Iterator<Token> it;
+
+		public LineContRemovalIterator(Iterator<Token> it) {
+			this.nextToken = null;
+			this.it = it;
+		}
+		
+		public boolean hasNext() {
+			return nextToken != null || fetch();
+		}
+		
+		public Token next() {
+			fetch();
+			Token temp = nextToken;
+			nextToken = null;
+			return temp;
+		}
+		
+		public boolean fetch() {
+			if (nextToken != null) {
+				return true;
+			}
+			if (!it.hasNext()) {
+				return false;
+			}
+			nextToken = it.next();
+			if (nextToken.type == "LINECONTINUATION") {
+				do {
+					nextToken = it.next();
+				} while (nextToken.type == "WHITESPACE");
+				assert nextToken.type == "EOL";
+				nextToken = it.next();
+			}
+			return true;
+		}
+
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+
+	}
+	
 	
 	public class Token {
 		public String type;

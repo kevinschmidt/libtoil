@@ -19,8 +19,8 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 			output += (output.isEmpty() ? "" : "-") + t;
 			types += (types.isEmpty() ? "" : ",") + shorten(t.type);
 		}
-		System.out.println(output);
-		System.out.println(types);
+//		System.out.println(output);
+//		System.out.println(types);
 		assertEquals(testOutput, output);
 		assertEquals(testTypes, types);
 	}
@@ -32,24 +32,31 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 		cmp(tt, testOutput, testTypes);
 	}
 
-	public void testText2() {
+	public void testAt1() {
 		TemplateTokenizer tt = new TemplateTokenizer("at@@at@ @at@ @@@at@ @ @at@ @at@@ @@@ @at @");
 		String testOutput = "at-@@-at-@- -@at@- -@@-@at@- -@- -@at@- -@at@-@- -@@-@- -@-at- -@";
 		String testTypes = "TL,AT,TL,AT,WS,CMD,WS,AT,CMD,WS,AT,WS,CMD,WS,CMD,AT,WS,AT,AT,WS,AT,TL,WS,AT";
 		cmp(tt, testOutput, testTypes);
 	}
 
-	public void testText3() {
+	public void testLines1() {
 		TemplateTokenizer tt = new TemplateTokenizer("this is\n a multi\nline \ntest");
 		String testOutput = "this- -is-\n- -a- -multi-\n-line- -\n-test";
 		String testTypes = "TL,WS,TL,EOL,WS,TL,WS,TL,EOL,TL,WS,EOL,TL";
 		cmp(tt, testOutput, testTypes);
 	}
 	
-	public void testText4() {
+	public void testComments1() {
 		TemplateTokenizer tt = new TemplateTokenizer("@cmd@ text\n@#comment\n\n@#c@#m#m@@e@#nt\n@#eof");
 		String testOutput = "@cmd@- -text-\n-@#comment-\n-\n-@#c@#m#m@@e@#nt-\n-@#eof";
 		String testTypes = "CMD,WS,TL,EOL,COMMENT,EOL,EOL,COMMENT,EOL,COMMENT";
+		cmp(tt, testOutput, testTypes);
+	}
+	
+	public void testLineConts1() {
+		TemplateTokenizer tt = new TemplateTokenizer("This should @\\ \nall be@\\\n on o@\\\nne li@\\ \nne");
+		String testOutput = "This- -should- -all- -be- -on- -o-ne- -li-ne";
+		String testTypes = "TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL,TL,WS,TL,TL";
 		cmp(tt, testOutput, testTypes);
 	}
 }
