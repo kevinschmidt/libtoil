@@ -38,11 +38,16 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 				while (cur < src.length && src[cur] != '@' && !Character.isWhitespace(src[cur])) {
 					cur++;
 				}
-				if (src[cur] != '@') { // loop terminated before finding @
-					nextToken = new Token("LITERALAT", pos, pos);
+				if (cur == src.length || src[cur] != '@') { // loop terminated before finding @
+					nextToken = new Token("LITERALAT", pos, pos+1);
 					pos += 1;
+					return true;
 				} else if (cur - pos == 1) { // found "@@"
-					nextToken = new Token("COMMAND", pos, cur);
+					nextToken = new Token("LITERALAT", pos, cur+1);
+					pos = cur + 1;
+					return true;
+				} else {
+					nextToken = new Token("COMMAND", pos, cur+1);
 					pos = cur + 1;
 					return true;
 				}
@@ -63,7 +68,6 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 				pos = cur;
 				return true;
 			}
-			throw new AssertionError("developer error, unreachable code");
 		}
 
 		public boolean hasNext() {
