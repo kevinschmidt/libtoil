@@ -5,9 +5,12 @@ import java.util.Iterator;
 public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 	char[] src;
 
-	
 	TemplateTokenizer(char[] src) {
 		this.src = src;
+	}
+	
+	TemplateTokenizer(String srcString) {
+		this.src = srcString.toCharArray();
 	}
 	
 	public Iterator<Token> iterator() {
@@ -23,26 +26,52 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			this.nextToken = null;
 		}
 
-		
 		boolean pump() {
 			if (nextToken != null) {
 				return true;
 			}
-			while (pos <= src.length) {
-				
+			if (!(pos < src.length)) {
+				return false;
 			}
-			return false;
+			if (src[pos] == '@') {
+				int cur = pos+1;
+				while (cur < src.length && src[cur] != '@' && !Character.isWhitespace(src[cur])) {
+					cur++;
+				}
+				if (src[cur] != '@') { // loop terminated before finding @
+					nextToken = new Token("LITERALAT", pos, pos);
+					pos += 1;
+				} else if (cur - pos == 1) { // found "@@"
+					nextToken = new Token("COMMAND", pos, cur);
+					pos = cur + 1;
+					return true;
+				}
+			} else if (Character.isWhitespace(src[pos])) {
+				int cur = pos+1;
+				while (cur < src.length && Character.isWhitespace(src[cur])) {
+					cur++;
+				}
+				nextToken = new Token("WHITESPACE", pos, cur);
+				pos = cur;
+				return true;
+			} else {
+				int cur = pos+1;
+				while (cur < src.length && src[cur] != '@' && !Character.isWhitespace(src[cur])) {
+					cur++;
+				}
+				nextToken = new Token("TEXTLITERAL", pos, cur);
+				pos = cur;
+				return true;
+			}
+			throw new AssertionError("developer error, unreachable code");
 		}
-
-
 
 		public boolean hasNext() {
-			return this.nextToken != null || pump();
+			return nextToken != null || pump();
 		}
 
-
-
 		public Token next() {
+			pump();
 			Token temp = nextToken;
 			nextToken = null;
 			return temp;
@@ -50,17 +79,22 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 
 		public void remove() {
 			throw new UnsupportedOperationException();
-			
 		}
 	}
 	
-
-
-
-
-	
 	public class Token {
+		String type;
+		int start, end;
 		
+		public Token(String type, int start, int end) {
+			this.type = type;
+			this.start = start;
+			this.end = end;
+		}
+		
+		public String toString() {
+			return new String(src, start, end-start);
+		}
 	}
 
 
