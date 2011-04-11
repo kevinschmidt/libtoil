@@ -39,6 +39,14 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 				return true;
 			} else if (src[pos] == '@') {
 				int cur = pos+1;
+				if (cur < src.length && src[cur] == '#') { // We are in a comment
+					while (cur < src.length && src[cur] != '\n') {
+						cur++;
+					}
+					nextToken = new Token("COMMENT", pos, cur);
+					pos = cur;
+					return true;
+				}
 				while (cur < src.length && src[cur] != '@' && !Character.isWhitespace(src[cur])) {
 					cur++;
 				}
