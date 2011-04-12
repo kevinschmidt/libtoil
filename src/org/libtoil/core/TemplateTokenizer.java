@@ -132,10 +132,19 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			}
 			nextToken = it.next();
 			if (nextToken.type == "LINECONTINUATION") {
+				Token tempCont = nextToken;
 				do {
+					if (!it.hasNext()) {
+						throw new TemplateParseError("Invalid line continuation", src, tempCont.start);
+					}
 					nextToken = it.next();
 				} while (nextToken.type == "WHITESPACE");
-				assert nextToken.type == "EOL";
+				if (nextToken.type != "EOL") {
+					throw new TemplateParseError("Invalid line continuation", src, tempCont.start);
+				}
+				if (!it.hasNext()) {
+					throw new TemplateParseError("Invalid line continuation", src, tempCont.start);
+				}
 				nextToken = it.next();
 			}
 			return true;

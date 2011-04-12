@@ -25,6 +25,17 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 		assertEquals(testTypes, types);
 	}
 	
+	public void cmpError(TemplateTokenizer tt, int pos) {
+		try {
+			for(TemplateTokenizer.Token t : tt) {
+	
+			}
+		} catch (TemplateParseError e) {
+//			System.out.println(e);
+			assertEquals(pos, e.pos);
+		}
+	}
+	
 	public void testText1() {
 		TemplateTokenizer tt = new TemplateTokenizer("The swift brown fox jumped over the lazy dog");
 		String testOutput = "The- -swift- -brown- -fox- -jumped- -over- -the- -lazy- -dog";
@@ -33,9 +44,9 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 	}
 
 	public void testAt1() {
-		TemplateTokenizer tt = new TemplateTokenizer("at@@at@ @at@ @@@at@ @ @at@ @at@@ @@@ @at @");
-		String testOutput = "at-@@-at-@- -@at@- -@@-@at@- -@- -@at@- -@at@-@- -@@-@- -@-at- -@";
-		String testTypes = "TL,AT,TL,AT,WS,CMD,WS,AT,CMD,WS,AT,WS,CMD,WS,CMD,AT,WS,AT,AT,WS,AT,TL,WS,AT";
+		TemplateTokenizer tt = new TemplateTokenizer("at@@at@ @at @ @@@at@ @ @ at@ @at@@ @@@ @at @");
+		String testOutput = "at-@@-at-@- -@-at- -@- -@@-@at@- -@- -@- -at-@- -@at@-@- -@@-@- -@-at- -@";
+		String testTypes = "TL,AT,TL,AT,WS,AT,TL,WS,AT,WS,AT,CMD,WS,AT,WS,AT,WS,TL,AT,WS,CMD,AT,WS,AT,AT,WS,AT,TL,WS,AT";
 		cmp(tt, testOutput, testTypes);
 	}
 
@@ -58,5 +69,20 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 		String testOutput = "This- -should- -all- -be- -on- -o-ne- -li-ne";
 		String testTypes = "TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL,TL,WS,TL,TL";
 		cmp(tt, testOutput, testTypes);
+	}
+	
+	public void testLineContError1() {
+		TemplateTokenizer tt = new TemplateTokenizer("Line continuation in the @\\ middle of a line.");
+		cmpError(tt, 25);
+	}
+	
+	public void testLineContError2() {
+		TemplateTokenizer tt = new TemplateTokenizer("Line continuation at the end of a file. @\\   ");
+		cmpError(tt, 40);
+	}
+
+	public void testLineContError3() {
+		TemplateTokenizer tt = new TemplateTokenizer("Line continuation at the end of a file. @\\");
+		cmpError(tt, 40);
 	}
 }
