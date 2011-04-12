@@ -8,6 +8,7 @@ import net.jimblackler.Utils.ResultHandler;
 import net.jimblackler.Utils.ThreadedYieldAdapter;
 
 import org.libtoil.core.TemplateTokenizer.Token;
+import org.libtoil.core.TemplateTokenizer.TokenType;
 
 public class TemplateSyntaxTree {
 
@@ -75,7 +76,7 @@ public class TemplateSyntaxTree {
 			return new String(token.getSource(), token.start, getTokenEnd()-token.start);	
 		}
 		
-		String getType() {
+		TokenType getType() {
 			return token.type;
 		}
 

@@ -1,15 +1,17 @@
 package org.libtoil.core;
+import org.libtoil.core.TemplateTokenizer.TokenType;
+
 import junit.framework.TestCase;
 
 
 public class TemplateTokenizerIteratorTest extends TestCase {
-	public String shorten(String s) {
-		if (s == "TEXTLITERAL") return "TL";
-		if (s == "WHITESPACE") return "WS";
-		if (s == "LITERALAT") return "AT";
-		if (s == "COMMAND") return "CMD";
-		if (s == "EOL") return "EOL";
-		return s;
+	public String shorten(TokenType type) {
+		if (type == TokenType.TEXTLITERAL) return "TL";
+		if (type == TokenType.WHITESPACE) return "WS";
+		if (type == TokenType.LITERALAT) return "AT";
+		if (type == TokenType.COMMAND) return "CMD";
+		if (type == TokenType.EOL) return "EOL";
+		return type.toString();
 	}
 
 	public void cmp(TemplateTokenizer tt, String testOutput, String testTypes) {
@@ -27,9 +29,7 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 	
 	public void cmpError(TemplateTokenizer tt, int pos) {
 		try {
-			for(TemplateTokenizer.Token t : tt) {
-			
-			}
+			for(TemplateTokenizer.Token t : tt);
 			fail("expected TemplateParseError not thrown");
 		} catch (TemplateParseError e) {
 //			System.out.println(e);

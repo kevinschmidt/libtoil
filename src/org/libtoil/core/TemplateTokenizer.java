@@ -9,6 +9,15 @@ import net.jimblackler.Utils.ThreadedYieldAdapter;
 
 public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 	char[] src;
+	public enum TokenType {
+		EOL,
+		LITERALAT,
+		WHITESPACE,
+		TEXTLITERAL, 
+		LINECONTINUATION, 
+		COMMENT, 
+		COMMAND,
+	}
 
 	TemplateTokenizer(char[] src) {
 		this.src = src;
@@ -19,95 +28,117 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 	}
 	
 	public Iterator<Token> iterator() {
-		Iterator<Token> it = new TemplateTokenizerIterator();
-		Collector<Token> coll = new LineContRemovalCollector(it);
+		Collector<Token> coll = new TemplateTokenizerCollector(src);
+		Iterator<Token> it = new ThreadedYieldAdapter<Token>().adapt(coll).iterator();
+		coll = new LineContRemovalCollector(it);
 		it = new ThreadedYieldAdapter<Token>().adapt(coll).iterator();
 		return it;
 	}
 	
-	public class TemplateTokenizerIterator implements Iterator<Token> {
-		int pos;
-		Token nextToken;
+	public class TemplateTokenizerCollector implements Collector<Token> {
+		char[] src;
 		
-		public TemplateTokenizerIterator() {
-			this.pos = 0;
-			this.nextToken = null;
+		TemplateTokenizerCollector(char[] src) {
+			this.src = src;
 		}
-
-		boolean fetch() {
-			if (nextToken != null) {
-				return true;
+		
+		public void collect(ResultHandler<Token> handler) throws CollectionAbortedException {
+			int start = 0;
+			do {
+				Token t = new Token(null, start, start);
+				char c;
+				do {
+					c = (t.end < src.length) ? src[t.end] : 0;
+					t.end++;
+				} while (!classify(t, c));
+				handler.handleResult(t);
+				start = t.end;
+			} while (start < src.length);
+		}
+		
+		boolean classify(Token t, char c) {
+			if (t.type == TokenType.LITERALAT) {
+				return classifyLiteralAt(t, c);
+			} else if (t.type == TokenType.COMMENT) {
+				return classifyComment(t, c);
+			} else if (t.type == TokenType.WHITESPACE) {
+				return classifyWhitespace(t, c);
+			} else if (t.type == TokenType.TEXTLITERAL) {
+				return classifyTextLiteral(t, c);
+			} else if (t.type == TokenType.COMMAND) {
+				return classifyCommand(t, c);
+			} else if (t.type == null) { 
+				return classifyNull(t, c);
+			} else {
+				throw new RuntimeException("unreachable code");
 			}
-			if (!(pos < src.length)) {
-				return false;
-			}
-			if (src[pos] == '\n') {
-				nextToken = new Token("EOL", pos, pos+1);
-				pos = pos+1;
+		}
+		
+		boolean classifyLiteralAt(Token t, char c) {
+			if (c == '#') {
+				t.type = TokenType.COMMENT;
+			} else if (c == '@') {
 				return true;
-			} else if (src[pos] == '@') {
-				int cur = pos+1;
-				if (cur < src.length && src[cur] == '#') { // We are in a comment
-					while (cur < src.length && src[cur] != '\n') {
-						cur++;
-					}
-					nextToken = new Token("COMMENT", pos, cur);
-					pos = cur;
-					return true;
-				}
-				if (cur < src.length && src[cur] == '\\') { // line continuation
-					nextToken = new Token("LINECONTINUATION", pos, ++cur);
-					pos = cur;
-					return true;
-				}
-				while (cur < src.length && src[cur] != '@' && !Character.isWhitespace(src[cur])) {
-					cur++;
-				}
-				if (cur == src.length || src[cur] != '@') { // loop terminated before finding @
-					nextToken = new Token("LITERALAT", pos, ++pos);
-
-					return true;
-				} else if (cur - pos == 1) { // found "@@"
-					nextToken = new Token("LITERALAT", pos, ++cur);
-					pos = cur;
-					return true;
-				} else {
-					nextToken = new Token("COMMAND", pos, ++cur);
-					pos = cur;
-					return true;
-				}
-			} else if (Character.isWhitespace(src[pos])) {
-				int cur = pos+1;
-				while (cur < src.length && Character.isWhitespace(src[cur]) && src[cur] != '\n') {
-					cur++;
-				}
-				nextToken = new Token("WHITESPACE", pos, cur);
-				pos = cur;
+			} else if (Character.isWhitespace(c) || c == '\n' || c == 0) {
+				t.end--;
+				return true;
+			} else if (c == '\\') {
+				t.type = TokenType.LINECONTINUATION;
 				return true;
 			} else {
-				int cur = pos+1;
-				while (cur < src.length && src[cur] != '@' && !Character.isWhitespace(src[cur])) {
-					cur++;
-				}
-				nextToken = new Token("TEXTLITERAL", pos, cur);
-				pos = cur;
-				return true;
+				t.type = TokenType.COMMAND;
 			}
+			return false;
+		}
+
+		boolean classifyComment(Token t, char c) {
+			if (c == '\n' || c == 0) {
+				t.end--;
+				return true;
+			} 
+			return false;
 		}
 		
-		public boolean hasNext() {
-			return nextToken != null || fetch();
+		boolean classifyWhitespace(Token t, char c) {
+			if (c == '\n' || !Character.isWhitespace(c) || c == 0) {
+				t.end--;
+				return true;
+			} 
+			return false;
 		}
-
-		public Token next() {
-			fetch();
-			Token temp = nextToken;
-			nextToken = null;
-			return temp;
+		
+		boolean classifyTextLiteral(Token t, char c) {
+			if (Character.isWhitespace(c) || c == '@' || c == 0) {
+				t.end--;
+				return true;
+			} 
+			return false;
 		}
-
-		public void remove() {
-			throw new UnsupportedOperationException();
+		
+		boolean classifyCommand(Token t, char c) {
+			if (Character.isWhitespace(c) || c == 0) {
+				t.end = t.start + 1;
+				t.type = TokenType.LITERALAT;
+				return true;
+			} else if (c == '@') {
+				return true;
+			}
+			return false;
+		}
+		
+		boolean classifyNull(Token t, char c) {
+			if (c == '\n') {
+				t.type = TokenType.EOL;
+				t.end = t.start + 1;
+				return true;
+			} else if (c == '@') {
+				t.type = TokenType.LITERALAT;
+			} else if (Character.isWhitespace(c)) {
+				t.type = TokenType.WHITESPACE;
+			} else {
+				t.type = TokenType.TEXTLITERAL;
+			}
+			return false;
 		}
 	}
 	
@@ -121,15 +152,15 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 		public void collect(ResultHandler<Token> handler) throws CollectionAbortedException {
 			while (it.hasNext()) {
 				Token t = it.next();
-				if (t.type == "LINECONTINUATION") {
+				if (t.type == TokenType.LINECONTINUATION) {
 					Token continuationToken = t;
 					do {
 						if (!it.hasNext()) {
 							throw new TemplateParseError("Invalid line continuation", src, continuationToken.start);
 						}
 						t = it.next();
-					} while (t.type == "WHITESPACE");
-					if (t.type != "EOL") {
+					} while (t.type == TokenType.WHITESPACE);
+					if (t.type != TokenType.EOL) {
 						throw new TemplateParseError("Invalid line continuation", src, continuationToken.start);
 					}
 					if (!it.hasNext()) {
@@ -143,10 +174,10 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 	}
 	
 	public class Token {
-		public String type;
+		public TokenType type;
 		public int start, end;
 		
-		public Token(String type, int start, int end) {
+		public Token(TokenType type, int start, int end) {
 			this.type = type;
 			this.start = start;
 			this.end = end;
