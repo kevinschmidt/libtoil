@@ -27,6 +27,16 @@ public class ThreadedYieldAdapter<T> implements YieldAdapter<T> {
     private class AbortedMessage extends StopMessage {
 
     }
+    
+    private class ExceptionMessage extends StopMessage {
+    	RuntimeException cause;
+    	ExceptionMessage(RuntimeException cause) {
+    		this.cause = cause;
+    	}
+    	RuntimeException getCause() {
+    		return cause;
+    	}
+    }
 
     /**
      * The vehicle to pass the actual values.
@@ -103,6 +113,8 @@ public class ThreadedYieldAdapter<T> implements YieldAdapter<T> {
                                     // to receive it, and the thread will block.
                                     synchronousQueue.put(new AbortedMessage());
                                 }
+                            } catch (RuntimeException e) {
+                                    synchronousQueue.put(new ExceptionMessage(e));
                             }
 
                         } catch (InterruptedException e) {
@@ -140,6 +152,9 @@ public class ThreadedYieldAdapter<T> implements YieldAdapter<T> {
                             try {
                               returnQueue.put(new Object()); // allow other thread to gather result
                               messageWaiting = synchronousQueue.take();
+                              if (ExceptionMessage.class.isAssignableFrom(messageWaiting.getClass())) {
+                            	  throw ((ExceptionMessage)messageWaiting).getCause();
+                              }
 
                             } catch (InterruptedException e) {
                                 messageWaiting = new EndMessage();
