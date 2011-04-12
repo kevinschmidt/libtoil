@@ -1,6 +1,6 @@
 package org.libtoil.core;
 
-public class TemplateParseError extends Error {
+public class TemplateParseError extends RuntimeException {
 	private static final long serialVersionUID = 799759114529840458L;
 	String message;
 	char[] src;

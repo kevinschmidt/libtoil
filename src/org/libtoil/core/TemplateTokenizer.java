@@ -2,6 +2,11 @@ package org.libtoil.core;
 
 import java.util.Iterator;
 
+import net.jimblackler.Utils.CollectionAbortedException;
+import net.jimblackler.Utils.Collector;
+import net.jimblackler.Utils.ResultHandler;
+import net.jimblackler.Utils.ThreadedYieldAdapter;
+
 public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 	char[] src;
 
@@ -14,7 +19,10 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 	}
 	
 	public Iterator<Token> iterator() {
-		return new LineContRemovalIterator(new TemplateTokenizerIterator());
+		Iterator<Token> it = new TemplateTokenizerIterator();
+		Collector<Token> coll = new LineContRemovalCollector(it);
+		it = new ThreadedYieldAdapter<Token>().adapt(coll).iterator();
+		return it;
 	}
 	
 	public class TemplateTokenizerIterator implements Iterator<Token> {
@@ -103,59 +111,36 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 		}
 	}
 	
-	public class LineContRemovalIterator implements Iterator<Token> { 
-		Token nextToken;
+	public class LineContRemovalCollector implements Collector<Token> { 
 		Iterator<Token> it;
 
-		public LineContRemovalIterator(Iterator<Token> it) {
-			this.nextToken = null;
+		public LineContRemovalCollector(Iterator<Token> it) {
 			this.it = it;
 		}
-		
-		public boolean hasNext() {
-			return nextToken != null || fetch();
-		}
-		
-		public Token next() {
-			fetch();
-			Token temp = nextToken;
-			nextToken = null;
-			return temp;
-		}
-		
-		public boolean fetch() {
-			if (nextToken != null) {
-				return true;
-			}
-			if (!it.hasNext()) {
-				return false;
-			}
-			nextToken = it.next();
-			if (nextToken.type == "LINECONTINUATION") {
-				Token tempCont = nextToken;
-				do {
-					if (!it.hasNext()) {
-						throw new TemplateParseError("Invalid line continuation", src, tempCont.start);
+
+		public void collect(ResultHandler<Token> handler) throws CollectionAbortedException {
+			while (it.hasNext()) {
+				Token t = it.next();
+				if (t.type == "LINECONTINUATION") {
+					Token continuationToken = t;
+					do {
+						if (!it.hasNext()) {
+							throw new TemplateParseError("Invalid line continuation", src, continuationToken.start);
+						}
+						t = it.next();
+					} while (t.type == "WHITESPACE");
+					if (t.type != "EOL") {
+						throw new TemplateParseError("Invalid line continuation", src, continuationToken.start);
 					}
-					nextToken = it.next();
-				} while (nextToken.type == "WHITESPACE");
-				if (nextToken.type != "EOL") {
-					throw new TemplateParseError("Invalid line continuation", src, tempCont.start);
+					if (!it.hasNext()) {
+						throw new TemplateParseError("Invalid line continuation", src, continuationToken.start);
+					}
+				} else {
+					handler.handleResult(t);
 				}
-				if (!it.hasNext()) {
-					throw new TemplateParseError("Invalid line continuation", src, tempCont.start);
-				}
-				nextToken = it.next();
 			}
-			return true;
 		}
-
-		public void remove() {
-			throw new UnsupportedOperationException();
-		}
-
 	}
-	
 	
 	public class Token {
 		public String type;
@@ -165,6 +150,10 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			this.type = type;
 			this.start = start;
 			this.end = end;
+		}
+		
+		public char[] getSource() {
+			return src;
 		}
 		
 		public String toString() {
