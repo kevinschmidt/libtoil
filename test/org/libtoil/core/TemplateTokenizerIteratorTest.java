@@ -1,10 +1,12 @@
 package org.libtoil.core;
+
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail; 
 import org.libtoil.core.TemplateTokenizer.TokenType;
 
-import junit.framework.TestCase;
 
-
-public class TemplateTokenizerIteratorTest extends TestCase {
+public class TemplateTokenizerIteratorTest {
 	public String shorten(TokenType type) {
 		if (type == TokenType.TEXTLITERAL) return "TL";
 		if (type == TokenType.WHITESPACE) return "WS";
@@ -37,6 +39,7 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testText1() {
 		TemplateTokenizer tt = new TemplateTokenizer("The swift brown fox jumped over the lazy dog");
 		String testOutput = "The- -swift- -brown- -fox- -jumped- -over- -the- -lazy- -dog";
@@ -44,6 +47,7 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 		cmp(tt, testOutput, testTypes);
 	}
 
+	@Test
 	public void testAt1() {
 		TemplateTokenizer tt = new TemplateTokenizer("at@@at@ @at @ @@@at@ @ @ at@ @at@@ @@@ @at @");
 		String testOutput = "at-@@-at-@- -@-at- -@- -@@-@at@- -@- -@- -at-@- -@at@-@- -@@-@- -@-at- -@";
@@ -51,6 +55,7 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 		cmp(tt, testOutput, testTypes);
 	}
 
+	@Test
 	public void testLines1() {
 		TemplateTokenizer tt = new TemplateTokenizer("this is\n a multi\nline \ntest");
 		String testOutput = "this- -is-\n- -a- -multi-\n-line- -\n-test";
@@ -58,6 +63,7 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 		cmp(tt, testOutput, testTypes);
 	}
 	
+	@Test
 	public void testComments1() {
 		TemplateTokenizer tt = new TemplateTokenizer("@cmd@ text\n@#comment\n\n@#c@#m#m@@e@#nt\n@#eof");
 		String testOutput = "@cmd@- -text-\n-@#comment-\n-\n-@#c@#m#m@@e@#nt-\n-@#eof";
@@ -65,6 +71,7 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 		cmp(tt, testOutput, testTypes);
 	}
 	
+	@Test
 	public void testLineConts1() {
 		TemplateTokenizer tt = new TemplateTokenizer("This should @\\ \nall be@\\\n on o@\\\nne li@\\ \nne");
 		String testOutput = "This- -should- -all- -be- -on- -o-ne- -li-ne";
@@ -72,16 +79,19 @@ public class TemplateTokenizerIteratorTest extends TestCase {
 		cmp(tt, testOutput, testTypes);
 	}
 	
+	@Test
 	public void testLineContError1() {
 		TemplateTokenizer tt = new TemplateTokenizer("Line continuation in the @\\ middle of a line.");
 		cmpError(tt, 25);
 	}
 	
+	@Test
 	public void testLineContError2() {
 		TemplateTokenizer tt = new TemplateTokenizer("Line continuation at the end of a file. @\\   ");
 		cmpError(tt, 40);
 	}
 
+	@Test
 	public void testLineContError3() {
 		TemplateTokenizer tt = new TemplateTokenizer("Line continuation at the end of a file. @\\");
 		cmpError(tt, 40);
