@@ -21,7 +21,7 @@ public class TemplateTokenizerIteratorTest {
 	public void cmp(TemplateTokenizer tt, String testOutput, String testTypes) {
 		String output = "";
 		String types = "";
-		for(TemplateTokenizer.Token t : tt) {
+		for(TemplateTokenizer.Token t : tt.parseTree().getTokens()) {
 			output += (output.isEmpty() ? "" : "-") + t;
 			types += (types.isEmpty() ? "" : ",") + shorten(t.type);
 		}
@@ -33,7 +33,7 @@ public class TemplateTokenizerIteratorTest {
 	
 	public void cmpError(TemplateTokenizer tt, int pos) {
 		try {
-			for(@SuppressWarnings("unused") TemplateTokenizer.Token t : tt);
+			for(@SuppressWarnings("unused") TemplateTokenizer.Token t : tt.parseTree().getTokens());
 			fail("expected TemplateParseError not thrown");
 		} catch (TemplateParseError e) {
 //			System.out.println(e);

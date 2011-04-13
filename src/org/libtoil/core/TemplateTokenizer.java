@@ -29,13 +29,51 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 		this.src = srcString.toCharArray();
 	}
 	
+	public SyntaxTreeNode parseTree() {
+		Iterator<Token> it = this.iterator();
+		if (!it.hasNext()) {
+			throw new TemplateParseError("Tokenizer failure", src, 0);
+		}
+		SyntaxTreeNode root = new SyntaxTreeNode(it.next());
+		SyntaxTreeNode line = null;
+		while (it.hasNext()) {
+			Token t = it.next();
+			if (t.type == TokenType.LINE) {
+				line = new SyntaxTreeNode(t);
+				root.addChild(line);
+			} else {
+				line.addChild(new SyntaxTreeNode(t));
+			}
+			
+		}
+		return root;
+	}
+	
 	public Iterator<Token> iterator() {
-
 		Iterator<Token> it = TemplateTokenizerModifier.getTokens(this);
 		it = LineContRemovalModifier.getTokens(this, it);
 		it = NoOperationModifier.getTokens(this, it);
 		it = InsertStartTokenModfier.getTokens(this, it);
 		return it;
+	}
+	
+	public class Token {
+		public TokenType type;
+		public int start, end;
+		
+		public Token(TokenType type, int start, int end) {
+			this.type = type;
+			this.start = start;
+			this.end = end;
+		}
+		
+		public char[] getSource() {
+			return src;
+		}
+		
+		public String toString() {
+			return new String(src, start, end-start);
+		}
 	}
 	
 	public static class TemplateTokenizerModifier {
@@ -234,25 +272,4 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			}
 		}
 	}
-	
-	public class Token {
-		public TokenType type;
-		public int start, end;
-		
-		public Token(TokenType type, int start, int end) {
-			this.type = type;
-			this.start = start;
-			this.end = end;
-		}
-		
-		public char[] getSource() {
-			return src;
-		}
-		
-		public String toString() {
-			return new String(src, start, end-start);
-		}
-	}
-
-
 }
