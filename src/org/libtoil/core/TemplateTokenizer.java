@@ -7,7 +7,7 @@ import net.jimblackler.Utils.Collector;
 import net.jimblackler.Utils.ResultHandler;
 import net.jimblackler.Utils.ThreadedYieldAdapter;
 
-public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
+public class TemplateTokenizer {
 	char[] src;
 	public enum TokenType {
 		EOL,
@@ -30,7 +30,11 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 	}
 	
 	public SyntaxTreeNode parseTree() {
-		Iterator<Token> it = this.iterator();
+		Iterator<Token> it = TemplateTokenizerModifier.getTokens(this);
+		it = LineContRemovalModifier.getTokens(this, it);
+		it = NoOperationModifier.getTokens(this, it);
+		it = InsertStartTokenModfier.getTokens(this, it);
+		
 		if (!it.hasNext()) {
 			throw new TemplateParseError("Tokenizer failure", src, 0);
 		}
@@ -47,14 +51,6 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			
 		}
 		return root;
-	}
-	
-	public Iterator<Token> iterator() {
-		Iterator<Token> it = TemplateTokenizerModifier.getTokens(this);
-		it = LineContRemovalModifier.getTokens(this, it);
-		it = NoOperationModifier.getTokens(this, it);
-		it = InsertStartTokenModfier.getTokens(this, it);
-		return it;
 	}
 	
 	public class Token {
