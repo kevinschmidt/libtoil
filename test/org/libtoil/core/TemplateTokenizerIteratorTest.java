@@ -33,7 +33,7 @@ public class TemplateTokenizerIteratorTest {
 	
 	public void cmpError(TemplateTokenizer tt, int pos) {
 		try {
-			for(TemplateTokenizer.Token t : tt);
+			for(@SuppressWarnings("unused") TemplateTokenizer.Token t : tt);
 			fail("expected TemplateParseError not thrown");
 		} catch (TemplateParseError e) {
 //			System.out.println(e);
