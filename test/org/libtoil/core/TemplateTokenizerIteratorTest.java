@@ -13,6 +13,8 @@ public class TemplateTokenizerIteratorTest {
 		if (type == TokenType.LITERALAT) return "AT";
 		if (type == TokenType.COMMAND) return "CMD";
 		if (type == TokenType.EOL) return "EOL";
+		if (type == TokenType.TEMPLATE) return "TPL";
+		if (type == TokenType.LINE) return "NL";
 		return type.toString();
 	}
 
@@ -43,7 +45,7 @@ public class TemplateTokenizerIteratorTest {
 	public void testText1() {
 		TemplateTokenizer tt = new TemplateTokenizer("The swift brown fox jumped over the lazy dog");
 		String testOutput = "The- -swift- -brown- -fox- -jumped- -over- -the- -lazy- -dog";
-		String testTypes = "TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL";
+		String testTypes = "TPL,NL,TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL";
 		cmp(tt, testOutput, testTypes);
 	}
 
@@ -51,23 +53,23 @@ public class TemplateTokenizerIteratorTest {
 	public void testAt1() {
 		TemplateTokenizer tt = new TemplateTokenizer("at@@at@ @at @ @@@at@ @ @ at@ @at@@ @@@ @at @");
 		String testOutput = "at-@@-at-@- -@-at- -@- -@@-@at@- -@- -@- -at-@- -@at@-@- -@@-@- -@-at- -@";
-		String testTypes = "TL,AT,TL,AT,WS,AT,TL,WS,AT,WS,AT,CMD,WS,AT,WS,AT,WS,TL,AT,WS,CMD,AT,WS,AT,AT,WS,AT,TL,WS,AT";
+		String testTypes = "TPL,NL,TL,AT,TL,AT,WS,AT,TL,WS,AT,WS,AT,CMD,WS,AT,WS,AT,WS,TL,AT,WS,CMD,AT,WS,AT,AT,WS,AT,TL,WS,AT";
 		cmp(tt, testOutput, testTypes);
 	}
 
 	@Test
 	public void testLines1() {
 		TemplateTokenizer tt = new TemplateTokenizer("this is\n a multi\nline \ntest");
-		String testOutput = "this- -is-\n- -a- -multi-\n-line- -\n-test";
-		String testTypes = "TL,WS,TL,EOL,WS,TL,WS,TL,EOL,TL,WS,EOL,TL";
+		String testOutput = "this- -is-\n-- -a- -multi-\n--line- -\n--test";
+		String testTypes = "TPL,NL,TL,WS,TL,EOL,NL,WS,TL,WS,TL,EOL,NL,TL,WS,EOL,NL,TL";
 		cmp(tt, testOutput, testTypes);
 	}
 	
 	@Test
 	public void testComments1() {
 		TemplateTokenizer tt = new TemplateTokenizer("@cmd@ text\n@#comment\n\n@#c@#m#m@@e@#nt\n@#eof");
-		String testOutput = "@cmd@- -text-\n-@#comment-\n-\n-@#c@#m#m@@e@#nt-\n-@#eof";
-		String testTypes = "CMD,WS,TL,EOL,COMMENT,EOL,EOL,COMMENT,EOL,COMMENT";
+		String testOutput = "@cmd@- -text-\n--@#comment-\n--\n--@#c@#m#m@@e@#nt-\n--@#eof";
+		String testTypes = "TPL,NL,CMD,WS,TL,EOL,NL,COMMENT,EOL,NL,EOL,NL,COMMENT,EOL,NL,COMMENT";
 		cmp(tt, testOutput, testTypes);
 	}
 	
@@ -75,7 +77,7 @@ public class TemplateTokenizerIteratorTest {
 	public void testLineConts1() {
 		TemplateTokenizer tt = new TemplateTokenizer("This should @\\ \nall be@\\\n on o@\\\nne li@\\ \nne");
 		String testOutput = "This- -should- -all- -be- -on- -o-ne- -li-ne";
-		String testTypes = "TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL,TL,WS,TL,TL";
+		String testTypes = "TPL,NL,TL,WS,TL,WS,TL,WS,TL,WS,TL,WS,TL,TL,WS,TL,TL";
 		cmp(tt, testOutput, testTypes);
 	}
 	

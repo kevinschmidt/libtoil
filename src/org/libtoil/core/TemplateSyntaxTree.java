@@ -11,6 +11,11 @@ import org.libtoil.core.TemplateTokenizer.Token;
 import org.libtoil.core.TemplateTokenizer.TokenType;
 
 public class TemplateSyntaxTree {
+	Node root;
+	
+	public TemplateSyntaxTree(Iterator<Token> it) {
+		
+	}
 
 	public class Node implements Iterable<Node> {
 		Node parent, nextSibling, firstChild, lastChild;

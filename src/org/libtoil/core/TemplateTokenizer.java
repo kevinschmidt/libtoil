@@ -17,6 +17,8 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 		LINECONTINUATION, 
 		COMMENT, 
 		COMMAND,
+		TEMPLATE,
+		LINE
 	}
 
 	TemplateTokenizer(char[] src) {
@@ -28,35 +30,46 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 	}
 	
 	public Iterator<Token> iterator() {
-		Collector<Token> coll = new TemplateTokenizerCollector(src);
-		Iterator<Token> it = new ThreadedYieldAdapter<Token>().adapt(coll).iterator();
-		coll = new LineContRemovalCollector(it);
-		it = new ThreadedYieldAdapter<Token>().adapt(coll).iterator();
+
+		Iterator<Token> it = TemplateTokenizerModifier.getTokens(this);
+		it = LineContRemovalModifier.getTokens(this, it);
+		it = NoOperationModifier.getTokens(this, it);
+		it = InsertStartTokenModfier.getTokens(this, it);
 		return it;
 	}
 	
-	public class TemplateTokenizerCollector implements Collector<Token> {
-		char[] src;
+	public static class TemplateTokenizerModifier {
+
+	    public static Iterator<Token> getTokens(final TemplateTokenizer tt) {
+	        return new ThreadedYieldAdapter<Token>().adapt(new Collector<Token>() {
+	            public void collect(ResultHandler<Token> resultHandler) throws
+	                    CollectionAbortedException {
+	            	process(tt, resultHandler);
+	            }
+	        }).iterator();
+	    }
 		
-		TemplateTokenizerCollector(char[] src) {
-			this.src = src;
-		}
-		
-		public void collect(ResultHandler<Token> handler) throws CollectionAbortedException {
+		public static void process(TemplateTokenizer tt, ResultHandler<Token> handler) throws CollectionAbortedException {
 			int start = 0;
 			do {
-				Token t = new Token(null, start, start);
+				Token t = tt.new Token(null, start, start);
 				char c;
 				do {
-					c = (t.end < src.length) ? src[t.end] : 0;
+					c = (t.end < tt.src.length) ? tt.src[t.end] : 0;
 					t.end++;
 				} while (!classify(t, c));
 				handler.handleResult(t);
 				start = t.end;
-			} while (start < src.length);
+			} while (start < tt.src.length);
 		}
 		
-		boolean classify(Token t, char c) {
+		/**
+		 * Called for each character to be 
+		 * @param t the Token currently being processed.  
+		 * @param c the current character being read from the template source
+		 * @return  true if the Token is complete
+		 */
+		private static boolean classify(Token t, char c) {
 			if (t.type == TokenType.LITERALAT) {
 				return classifyLiteralAt(t, c);
 			} else if (t.type == TokenType.COMMENT) {
@@ -74,7 +87,7 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			}
 		}
 		
-		boolean classifyLiteralAt(Token t, char c) {
+		private static boolean classifyLiteralAt(Token t, char c) {
 			if (c == '#') {
 				t.type = TokenType.COMMENT;
 			} else if (c == '@') {
@@ -91,7 +104,7 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			return false;
 		}
 
-		boolean classifyComment(Token t, char c) {
+		private static boolean classifyComment(Token t, char c) {
 			if (c == '\n' || c == 0) {
 				t.end--;
 				return true;
@@ -99,7 +112,7 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			return false;
 		}
 		
-		boolean classifyWhitespace(Token t, char c) {
+		private static boolean classifyWhitespace(Token t, char c) {
 			if (c == '\n' || !Character.isWhitespace(c) || c == 0) {
 				t.end--;
 				return true;
@@ -107,7 +120,7 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			return false;
 		}
 		
-		boolean classifyTextLiteral(Token t, char c) {
+		private static boolean classifyTextLiteral(Token t, char c) {
 			if (Character.isWhitespace(c) || c == '@' || c == 0) {
 				t.end--;
 				return true;
@@ -115,7 +128,7 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			return false;
 		}
 		
-		boolean classifyCommand(Token t, char c) {
+		private static boolean classifyCommand(Token t, char c) {
 			if (Character.isWhitespace(c) || c == 0) {
 				t.end = t.start + 1;
 				t.type = TokenType.LITERALAT;
@@ -126,7 +139,7 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 			return false;
 		}
 		
-		boolean classifyNull(Token t, char c) {
+		private static boolean classifyNull(Token t, char c) {
 			if (c == '\n') {
 				t.type = TokenType.EOL;
 				t.end = t.start + 1;
@@ -142,32 +155,81 @@ public class TemplateTokenizer implements Iterable<TemplateTokenizer.Token> {
 		}
 	}
 	
-	public class LineContRemovalCollector implements Collector<Token> { 
-		Iterator<Token> it;
+	public static class LineContRemovalModifier {
+	    public static Iterator<Token> getTokens(final TemplateTokenizer tt, final Iterator<Token> it) {
+	        return new ThreadedYieldAdapter<Token>().adapt(new Collector<Token>() {
+	            public void collect(ResultHandler<Token> resultHandler) throws
+	                    CollectionAbortedException {
+	            	process(tt, it, resultHandler);
+	            }
+	        }).iterator();
+	    }
 
-		public LineContRemovalCollector(Iterator<Token> it) {
-			this.it = it;
-		}
-
-		public void collect(ResultHandler<Token> handler) throws CollectionAbortedException {
+		public static void process(
+				TemplateTokenizer tt, Iterator<Token> it, ResultHandler<Token> handler)
+				throws CollectionAbortedException {
 			while (it.hasNext()) {
 				Token t = it.next();
 				if (t.type == TokenType.LINECONTINUATION) {
 					Token continuationToken = t;
 					do {
 						if (!it.hasNext()) {
-							throw new TemplateParseError("Invalid line continuation", src, continuationToken.start);
+							throw new TemplateParseError("Invalid line continuation", tt.src, continuationToken.start);
 						}
 						t = it.next();
 					} while (t.type == TokenType.WHITESPACE);
 					if (t.type != TokenType.EOL) {
-						throw new TemplateParseError("Invalid line continuation", src, continuationToken.start);
+						throw new TemplateParseError("Invalid line continuation", tt.src, continuationToken.start);
 					}
 					if (!it.hasNext()) {
-						throw new TemplateParseError("Invalid line continuation", src, continuationToken.start);
+						throw new TemplateParseError("Invalid line continuation", tt.src, continuationToken.start);
 					}
 				} else {
 					handler.handleResult(t);
+				}
+			}
+		}
+	}
+
+	public static class NoOperationModifier {
+	    public static Iterator<Token> getTokens(final TemplateTokenizer tt, final Iterator<Token> it) {
+	        return new ThreadedYieldAdapter<Token>().adapt(new Collector<Token>() {
+	            public void collect(ResultHandler<Token> resultHandler) throws
+	                    CollectionAbortedException {
+	            	process(tt, it, resultHandler);
+	            }
+	        }).iterator();
+	    }
+	    
+		public static void process(
+				TemplateTokenizer tt, Iterator<Token> it, ResultHandler<Token> handler)
+				throws CollectionAbortedException {
+			while (it.hasNext()) {
+				handler.handleResult(it.next());
+			}
+
+		}
+	}
+
+	public static class InsertStartTokenModfier {
+	    public static Iterator<Token> getTokens(final TemplateTokenizer tt, final Iterator<Token> it) {
+	        return new ThreadedYieldAdapter<Token>().adapt(new Collector<Token>() {
+	            public void collect(ResultHandler<Token> resultHandler) throws
+	                    CollectionAbortedException {
+	            	process(tt, it, resultHandler);
+	            }
+	        }).iterator();
+	    }
+
+		public static void process(TemplateTokenizer tt, Iterator<Token> it,
+				ResultHandler<Token> handler) throws CollectionAbortedException {
+			handler.handleResult(tt.new Token(TokenType.TEMPLATE, 0, 0));
+			handler.handleResult(tt.new Token(TokenType.LINE, 0, 0));
+			while (it.hasNext()) {
+				Token t = it.next();
+				handler.handleResult(t);
+				if (t.type == TokenType.EOL) {
+					handler.handleResult(tt.new Token(TokenType.LINE, t.end, t.end));
 				}
 			}
 		}
