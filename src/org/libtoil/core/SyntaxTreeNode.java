@@ -1,12 +1,8 @@
 package org.libtoil.core;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-
-
-import net.jimblackler.Utils.CollectionAbortedException;
-import net.jimblackler.Utils.Collector;
-import net.jimblackler.Utils.ResultHandler;
-import net.jimblackler.Utils.ThreadedYieldAdapter;
+import java.util.List;
 
 import org.libtoil.core.TemplateTokenizer.Token;
 import org.libtoil.core.TemplateTokenizer.TokenType;
@@ -76,33 +72,43 @@ public class SyntaxTreeNode implements Iterable<SyntaxTreeNode> {
 	}
 
 	public Iterable<Token> getTokens() {
-        return new ThreadedYieldAdapter<Token>().adapt(new Collector<Token>() {
-            public void collect(ResultHandler<Token> resultHandler) throws
-                    CollectionAbortedException {
-            	for(SyntaxTreeNode node: SyntaxTreeNode.this) {
-            		resultHandler.handleResult(node.token);
-            	}
-            }
-        });
+		List<Token> result = new ArrayList<Token>();
+    	for(SyntaxTreeNode node: SyntaxTreeNode.this) {
+    		result.add(node.token);
+    	}
+    	return result;
 	}
 	
-    public Iterator<SyntaxTreeNode> iterator() {
-        return new ThreadedYieldAdapter<SyntaxTreeNode>().adapt(new Collector<SyntaxTreeNode>() {
-            public void collect(ResultHandler<SyntaxTreeNode> resultHandler) throws
-                    CollectionAbortedException {
-            	traverseDepthFirst(SyntaxTreeNode.this, resultHandler);
-            }
-        }).iterator();
-    }
-    
-	public void traverseDepthFirst(SyntaxTreeNode node, ResultHandler<SyntaxTreeNode> handler) throws CollectionAbortedException {
-		handler.handleResult(node);
-		SyntaxTreeNode curChild = node.firstChild;
-		while (curChild != null) {
-			traverseDepthFirst(curChild, handler);
-			curChild = curChild.nextSibling;
+	public class DepthFirstIterator implements Iterator<SyntaxTreeNode> {
+		SyntaxTreeNode nextNode;
+		Iterator<SyntaxTreeNode> curChildIt;
+		
+		public DepthFirstIterator() {
+			nextNode = SyntaxTreeNode.this;
+		}
+		
+		public boolean hasNext() {
+			return nextNode != null && !curChildIt.hasNext();
+		}
+
+		public SyntaxTreeNode next() {
+			if (SyntaxTreeNode.this == nextNode) {
+				nextNode = firstChild;
+				return SyntaxTreeNode.this;
+			} 
+			if (curChildIt == null || !curChildIt.hasNext()) {
+				curChildIt = nextNode.iterator();
+				nextNode = nextNode.nextSibling;
+			}
+			return curChildIt.next();
+		}
+
+		public void remove() {
+			throw new UnsupportedOperationException();
 		}
 	}
 
-
+	public Iterator<SyntaxTreeNode> iterator() {
+		return new DepthFirstIterator();
+	}
 }
