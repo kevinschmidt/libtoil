@@ -74,6 +74,7 @@ public class SyntaxTreeNode implements Iterable<SyntaxTreeNode> {
 	public Iterable<Token> getTokens() {
 		List<Token> result = new ArrayList<Token>();
     	for(SyntaxTreeNode node: SyntaxTreeNode.this) {
+    		System.out.println("-" + node.token);
     		result.add(node.token);
     	}
     	return result;
@@ -81,14 +82,14 @@ public class SyntaxTreeNode implements Iterable<SyntaxTreeNode> {
 	
 	public class DepthFirstIterator implements Iterator<SyntaxTreeNode> {
 		SyntaxTreeNode nextNode;
-		Iterator<SyntaxTreeNode> curChildIt;
+		Iterator<SyntaxTreeNode> it;
 		
 		public DepthFirstIterator() {
 			nextNode = SyntaxTreeNode.this;
 		}
 		
 		public boolean hasNext() {
-			return nextNode != null && !curChildIt.hasNext();
+			return nextNode != null || it != null && it.hasNext();
 		}
 
 		public SyntaxTreeNode next() {
@@ -96,11 +97,11 @@ public class SyntaxTreeNode implements Iterable<SyntaxTreeNode> {
 				nextNode = firstChild;
 				return SyntaxTreeNode.this;
 			} 
-			if (curChildIt == null || !curChildIt.hasNext()) {
-				curChildIt = nextNode.iterator();
+			if (it == null || !it.hasNext()) {
+				it = nextNode.new DepthFirstIterator();
 				nextNode = nextNode.nextSibling;
 			}
-			return curChildIt.next();
+			return it.next();
 		}
 
 		public void remove() {

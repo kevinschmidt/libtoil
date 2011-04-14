@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.HeaderTokenizer.Token;
-
 public class TemplateTokenizer {
 	char[] src;
 	public enum TokenType {
@@ -32,7 +30,6 @@ public class TemplateTokenizer {
 		List<Token> l = parseTokens();
 		l = removeLineContinuations(l);
 		l = insertStartTokens(l);
-		
 		SyntaxTreeNode root = null;
 		SyntaxTreeNode line = null;
 		for (Token t: l) {
@@ -42,10 +39,8 @@ public class TemplateTokenizer {
 				line = new SyntaxTreeNode(t);
 				root.addChild(line);
 			} else {
-
 				line.addChild(new SyntaxTreeNode(t));
 			}
-			
 		}
 		return root;
 	}
