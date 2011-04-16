@@ -1,54 +1,51 @@
 grammar toil;
 
 statement
-    : variable | declarations | control
+    : variable | control | declarations 
     ;
 
+// @;ordered-int-list:temperatures@ 
+// @$foreach:temperatures(maxitems=3)@
+// temp=@.(format="%4.2f")@
+// @$end@
+
 variable
-  : AT ID AT
+  : AT var_name (OPENP (SEMI* (inline_option))* SEMI* CLOSEP)? AT
   ;
   
 declarations
-	: AT SEMI (inline_declarations | ( OPENC+ header_declarations CLOSEC+ )) AT
-	;
-
-header_declarations
-	: ((SEMI | EOL)* h_declaration)* (SEMI | EOL)*
-	;
-
-h_declaration
-	: h_var_decl | h_opt_del
-	;
-
-h_var_decl
-	: type_id WS? COLON WS? var_id WS? (OPENP header_declarations CLOSEP)?
-	;
-
-h_opt_del
-	: opt_id WS? EQUALS WS? value_id
-	;
-
-inline_declarations
-	: (SEMI* i_declaration)* SEMI*
-	;
-
-i_declaration
-	: i_var_decl | i_opt_del
-	;
-
-i_var_decl
-	: type_id COLON var_id (OPENP inline_declarations CLOSEP)?
-	;
-
-i_opt_del
-	: opt_id EQUALS value_id
-	;
-
-control :
-  : AT DOLLAR control_id (COLON var_id)? AT
+  : AT SEMI (inline_declarations | ( OPENC+ header_declarations CLOSEC+ )) AT
   ;
 
-opt_id
+header_declarations
+  : ((SEMI | EOL | WS)* (header_variable | header_option))* (SEMI | EOL | WS)*
+  ;
+
+header_variable
+  : var_type (COLON | WS)+ var_name (EOL | WS)* (OPENP header_declarations CLOSEP)?
+  ;
+
+header_option
+  : option_name WS? EQUALS WS? option_value
+  ;
+
+inline_declarations
+  : (SEMI* (inline_variable | inline_option))* SEMI*
+  ;
+
+inline_variable
+  : var_type COLON var_name (OPENP inline_declarations CLOSEP)?
+  ;
+
+inline_option
+  : option_name EQUALS option_value
+  ;
+
+control 
+  : AT DOLLAR control_id (COLON var_name)? (OPENP (SEMI* (inline_option))* SEMI* CLOSEP)? AT
+  ;
+
+option_name
   : ID
   ;
   
@@ -56,61 +53,67 @@ control_id
   : ID
   ;
   
-var_id
-  : ID
+var_name
+  : (DOT? ID)+
   ;
 
-value_id
+option_value
   : ID | QUOTED
   ;
   
-type_id
+var_type
   : ID
+  ;
+
+DOT
+  : '.' 
   ;
       
 OPENC
-	: '{'
-	;
+  : '{' 
+  ;
 
 CLOSEC
-	: '}'
-	;
+  : '}'
+  ;
 
 OPENP
-	: '('
-	;
+  : '('
+  ;
 
 CLOSEP
-	: ')'
-	;
-	
+  : ')'
+  ;
+  
 EQUALS
-	: '='
-	;
+  : '='
+  ;
 
 COLON
-	: ':'
-	;
+  : ':'
+  ;
 
 
 DOLLAR
-	: '$'
-	;
+  : '$'
+  ;
 
 HASH
-	: '#'
-	;
+  : '#'
+  ;
 
 SEMI
-	: ';'
-	;
+  : ';'
+  ;
     
 AT
-	: '@'
-	;
+  : '@'
+  ;
     
 QUOTED
-  : '"' ( ESCAPE | ~('"'|'\\') )* '"'   ;
+  : '"' ~'"'* '"' 
+//  : '"' ( ESCAPE | ~('"'|'\\') )* '"' 
+  ;
     
 protected
 ESCAPE
@@ -122,16 +125,19 @@ ESCAPE
          )
     ;    
     
-    
 ID
-	: ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-	;    
+  : ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'/'|'-')*
+  ;    
 
 EOL
-	: WS? '\r'?  '\n' WS?
-	;	
-	
+  : '\r'?  '\n'
+  ; 
+  
 WS
-	: ( ' ' | '\t' )+
-	;
-	
+  : ( ' ' | '\t' )+
+  ;
+  
+COMMENT 
+    : '#' ~('\r' | '\n')*  {$channel=HIDDEN;} 
+    ;
+  
