@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
+
+	<info organisation="eu.stupidsoup" module="backpack"/>
+	<dependencies defaultconf="default->compile(*),master(*),runtime(*)">
+		<dependency org="log4j" name="log4j" rev="1.2.+" />
+		<dependency org="commons-io" name="commons-io" rev="2.0.+" />
+		<dependency org="org.antlr" name="antlr" rev="3.+" />
+		<dependency org="junit" name="junit" rev="4.8.+" />
+	</dependencies>
+</ivy-module>

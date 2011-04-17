@@ -1,0 +1,38 @@
+@#{
+Toil template for /etc/resolv.conf
+Author: Kevin Schmidt
+}@
+@;{
+namespace=/system/dns
+ordered=false
+missing-values=null
+case-sensitive=false
+whitespace=relaxed
+field-delimiter=whitespace #What does this mean?
+comment-chars=;#
+
+ip-set:~nameserver(ordered=true; maxitems=3; required=true)
+string:~domain()
+string-set:~search()
+namespace-set:~sortlist(
+	ip:ip(required=true)
+	ip:netmask()
+)
+boolean:~debug()
+integer:~ndots()
+integer:~timeout()
+integer:~attempts()
+boolean:rotate()
+boolean:inet6()
+}@
+
+# This file is being controlled by Toil
+# All local changes will be lost
+
+@$foreach:~nameserver@
+nameserver @.@
+@$end@
+domain @~domain@
+search @$foreach:~search@@.@@$end@
+sortlist @$foreach:~sortlist@@ip@@$if:netmask@/@netmask@@$end$@$end@
+options @$if:~debug@debug@$end@ ndots:@~ndots@ timeout:@~timeout@ attempts:@~attempts@ @$if:~rotate@rotate@$end@ @$if:~inet6@inet6@$end@
