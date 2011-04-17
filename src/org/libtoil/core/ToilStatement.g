@@ -1,4 +1,16 @@
-grammar toil;
+grammar ToilStatement;
+
+options {
+  language=Java; 
+}
+
+@header {
+  package org.libtoil.core;
+}
+
+@lexer::header {
+  package org.libtoil.core;
+}
 
 statement
     : variable | control | declarations 
@@ -22,7 +34,7 @@ header_declarations
   ;
 
 header_variable
-  : var_type (COLON | WS)+ var_name (EOL | WS)* (OPENP header_declarations CLOSEP)?
+  : var_type (COLON | WS)+ var_name ( (EOL | WS)* OPENP header_declarations CLOSEP)?
   ;
 
 header_option
@@ -93,7 +105,6 @@ COLON
   : ':'
   ;
 
-
 DOLLAR
   : '$'
   ;
@@ -112,18 +123,7 @@ AT
     
 QUOTED
   : '"' ~'"'* '"' 
-//  : '"' ( ESCAPE | ~('"'|'\\') )* '"' 
   ;
-    
-protected
-ESCAPE
-    :    '\\'
-         ( 'n' { $setText("\n"); }
-         | 'r' { $setText("\r"); }
-         | 't' { $setText("\t"); }
-         | '"' { $setText("\""); }
-         )
-    ;    
     
 ID
   : ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'/'|'-')*
