@@ -34,5 +34,5 @@ nameserver @.@
 @$end@
 domain @~domain@
 search @$foreach:~search@@.@@$end@
-sortlist @$foreach:~sortlist@@ip@@$if:netmask@/@netmask@@$end$@$end@
+sortlist @$foreach:~sortlist@@ip@@$if:netmask@/@netmask@@$end@@$end@
 options @$if:~debug@debug@$end@ ndots:@~ndots@ timeout:@~timeout@ attempts:@~attempts@ @$if:~rotate@rotate@$end@ @$if:~inet6@inet6@$end@
