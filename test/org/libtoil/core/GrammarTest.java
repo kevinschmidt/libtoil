@@ -19,7 +19,7 @@ public class GrammarTest {
     
     @Test
     public void header_BasicVariable_ShortNamespace() throws IOException, RecognitionException {
-        ToilStatementParser parser = createParser("@;string:~domain()@");
+        ToilStatementParser parser = createParser("@;string:domain()@");
         parser.statement();
     }
     
@@ -31,7 +31,7 @@ public class GrammarTest {
     
     @Test
     public void header_LeafSetVariable_ShortNamespace() throws IOException, RecognitionException {
-        ToilStatementParser parser = createParser("@;string-set:~nameserver()@");
+        ToilStatementParser parser = createParser("@;string-set:nameserver()@");
         parser.statement();
     }
     

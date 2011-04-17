@@ -1,0 +1,7 @@
+
+syntax: regexp
+^gen/org/libtoil/core/ToilStatementLexer\.java$
+syntax: regexp
+^gen/org/libtoil/core/ToilStatementParser\.java$
+syntax: regexp
+^gen/org/libtoil/core/ToilStatement\.tokens$

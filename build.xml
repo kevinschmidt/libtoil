@@ -1,0 +1,42 @@
+<project  xmlns:ivy="antlib:org.apache.ivy.ant" name="toil"  basedir=".">
+	<description>
+        toil is the Text Output/Input Language that allows the bidirectional 
+		translation between text files and normalized data structures using 
+		the toil templating language.
+    </description>
+
+	<path id="classpath">
+		<pathelement location="lib/com.springsource.org.apache.tools.ant.antlr-1.0.0.jar"/>
+		<pathelement location="lib/antlr-3.3.jar"/>
+	</path>
+
+	<taskdef uri="antlib:org/apache/tools/ant/antlr">
+		<classpath refid="classpath"/>
+	</taskdef>
+
+
+
+	<target name="resolve" description="--> retrieve dependencies with ivy">
+		<ivy:retrieve />
+
+	</target>
+
+
+	<target name="antlr">
+		<mkdir dir="gen/org/libtoil/core"/>
+		<antlr:antlr3 xmlns:antlr="antlib:org/apache/tools/ant/antlr" 
+			target="src/org/libtoil/core/ToilStatement.g" 
+			outputdirectory="gen/org/libtoil/core">
+			<classpath>
+				<pathelement location="lib/antlr-3.3.jar"/>
+			</classpath>
+		</antlr:antlr3>
+	</target>
+
+
+
+
+	<target name="ger_parser" description="remove intermediate files">
+		<delete dir="classes"/>
+	</target>
+</project>

@@ -1,6 +1,6 @@
 @#{
 Toil template for /etc/resolv.conf
-Author: Kevin Schmidt
+Author: Kevin Schmidt, Chris Akre
 }@
 @;{
 namespace=/system/dns
@@ -8,12 +8,12 @@ ordered=false
 missing-values=null
 case-sensitive=false
 whitespace=relaxed
-comment-chars=;#
+comment-chars=";#"
 
 ip-set:~nameserver(ordered=true; maxitems=3; required=true)
 string:~domain()
-string-set:~search()
-namespace-set:~sortlist(
+unordered-string-set:~search()
+unordered-namespace-set:~sortlist(
 	ip:ip(required=true)
 	ip:netmask()
 )
