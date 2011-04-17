@@ -8,7 +8,6 @@ ordered=false
 missing-values=null
 case-sensitive=false
 whitespace=relaxed
-field-delimiter=whitespace #What does this mean?
 comment-chars=;#
 
 ip-set:~nameserver(ordered=true; maxitems=3; required=true)
@@ -18,12 +17,12 @@ namespace-set:~sortlist(
 	ip:ip(required=true)
 	ip:netmask()
 )
-boolean:~debug()
+flag:~debug()
 integer:~ndots()
 integer:~timeout()
 integer:~attempts()
-boolean:rotate()
-boolean:inet6()
+flag:~rotate()
+flag:~inet6()
 }@
 
 # This file is being controlled by Toil
@@ -34,5 +33,13 @@ nameserver @.@
 @$end@
 domain @~domain@
 search @$foreach:~search@@.@@$end@
-sortlist @$foreach:~sortlist@@ip@@$if:netmask@/@netmask@@$end@@$end@
-options @$if:~debug@debug@$end@ ndots:@~ndots@ timeout:@~timeout@ attempts:@~attempts@ @$if:~rotate@rotate@$end@ @$if:~inet6@inet6@$end@
+sortlist @$foreach:~sortlist@@ip@@netmask(format="/%s")@ @$end@@$end@
+@$section(ignore-whitespace,delimiter=whitespace)@
+	options
+	@~debug@
+	ndots:@~ndots@
+	timeout:@~timeout@
+	attempts:@~attempts@
+	@~rotate@
+	@~inet6@
+@$end@
