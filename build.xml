@@ -24,15 +24,16 @@
 
 	<target name="antlr">
 		<mkdir dir="gen/org/libtoil/core"/>
+		  <delete>
+		    <fileset dir="gen/org/libtoil/core" includes="**"/>
+		  </delete>
+
 		<antlr:antlr3 xmlns:antlr="antlib:org/apache/tools/ant/antlr" 
 			target="src/org/libtoil/core/ToilStatement.g" 
 			outputdirectory="gen/org/libtoil/core">
 			<classpath refid="ivy.classpath" />
 		</antlr:antlr3>
 	</target>
-
-
-
 
 	<target name="ger_parser" description="remove intermediate files">
 		<delete dir="classes"/>

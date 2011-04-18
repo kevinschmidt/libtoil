@@ -7,7 +7,10 @@
 		<dependency org="log4j" name="log4j" rev="1.2.+" />
 		<dependency org="commons-io" name="commons-io" rev="2.0.+" />
 		<dependency org="org.antlr" name="antlr" rev="3.+" />
-		<dependency org="org.apache.ant" name="com.springsource.org.apache.tools.ant.antlr" rev="1.0.0" />
+		<dependency org="org.antlr" name="antlr-runtime" rev="3.+" transitive="false"/>
+		<dependency org="org.antlr" name="stringtemplate" rev="3.+" transitive="false"/>
+		<dependency org="org.apache.ant" name="com.springsource.org.apache.tools.ant.antlr" rev="1.0.0" transitive="false"/>
 		<dependency org="junit" name="junit" rev="4.8.+" />
 	</dependencies>
+	
 </ivy-module>
