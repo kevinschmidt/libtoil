@@ -11,7 +11,7 @@ public class TemplateTokenizerIteratorTest {
 		if (type == TokenType.TEXTLITERAL) return "TL";
 		if (type == TokenType.WHITESPACE) return "WS";
 		if (type == TokenType.LITERALAT) return "AT";
-		if (type == TokenType.COMMAND) return "CMD";
+		if (type == TokenType.STATEMENT) return "CMD";
 		if (type == TokenType.EOL) return "EOL";
 		if (type == TokenType.TEMPLATE) return "TPL";
 		if (type == TokenType.LINE) return "NL";

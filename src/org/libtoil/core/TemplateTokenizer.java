@@ -9,8 +9,6 @@ import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.Lexer;
 
-import antlr.Parser;
-
 public class TemplateTokenizer {
 	char[] src;
 	public enum TokenType {
@@ -20,7 +18,7 @@ public class TemplateTokenizer {
 		TEXTLITERAL, 
 		LINECONTINUATION, 
 		COMMENT, 
-		COMMAND,
+		STATEMENT,
 		TEMPLATE,
 		LINE
 	}
@@ -62,6 +60,15 @@ public class TemplateTokenizer {
 			this.end = end;
 		}
 		
+		char nextChar() {
+			if (end < src.length) {
+				return src[end++];
+			} else {
+				end++;
+				return 0;
+			}
+		}
+		
 		public char[] getSource() {
 			return src;
 		}
@@ -78,15 +85,101 @@ public class TemplateTokenizer {
 			Token t = new Token(null, start, start);
 			char c;
 			do {
-				c = (t.end < src.length) ? src[t.end] : 0;
-				t.end++;
+				c = t.nextChar();
 			} while (!classify(t, c));
 			result.add(t);
 			start = t.end;
 		} while (start < src.length);
 		return result;
 	}
+
+	 class TokenInterator implements Iterator<Token> {
+		int pos;
+		public boolean hasNext() {
+			return pos < src.length;
+		}
+
+		private char nextChar() {
+			if (pos < src.length) {
+				return src[pos++];
+			} else {
+				pos++;
+				return 0;
+			}
+		}
 		
+		public Token next() {
+			int start = pos;
+			char c = nextChar();
+			if (c == '\n') {
+				return new Token(TokenType.EOL, start, pos);
+			} else if (c == '@') {
+				return parseLiteralAt(start, nextChar());
+			} else if (Character.isWhitespace(c)) {
+				return parseWhitespace(start, nextChar());
+			} else {
+				return parseText(start, nextChar());
+			}
+		}
+		
+		private Token parseWhitespace(int start, char c) {
+			while (c != '\n' && Character.isWhitespace(c)) {
+				c = nextChar();
+			}
+			return new Token(TokenType.WHITESPACE, start, --pos);
+		}
+		
+		private Token parseText(int start, char c) {
+			while (!Character.isWhitespace(c) && c != '@' && c!= 0) {
+				c = nextChar();
+			}
+			return new Token(TokenType.TEXTLITERAL, start, --pos);
+		}
+		
+		private Token parseLiteralAt(int start, char c) {
+			if (c == '#') {
+				return parseComment(start, nextChar());
+			} else if (c == '@') {
+				return new Token(TokenType.LITERALAT, start, pos);
+			} else if (Character.isWhitespace(c) || c == '\n' || c == 0) {
+				return new Token(TokenType.LITERALAT, start, --pos);
+			} else if (c == '\\') {
+				return parseLineContinuation(start, nextChar());
+			} else {
+				return parseStatement(start);
+			}
+		}
+		
+		private Token parseStatement(int start) {
+			return null;
+		}
+		
+		private Token parseComment(int start, char c) {
+			while (c != '\n' && c != 0) {
+				c = nextChar();
+			}
+			return new Token(TokenType.LITERALAT, start, --pos);
+		}
+
+		private Token parseLineContinuation(int start, char c) {
+			while (c != '\n' && Character.isWhitespace(c)) {
+				c = nextChar();
+			}
+			if (nextChar() == '\n') { 
+				return new Token(TokenType.LITERALAT, start, --pos);
+			} else {
+				throw new TemplateParseError("Invalid line continuation", src, start);
+			}
+		}
+
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+		
+	}
+
+	
+	
 	/**
 	 * Called for each character to be 
 	 * @param t the Token currently being processed.  
@@ -102,7 +195,7 @@ public class TemplateTokenizer {
 			return classifyWhitespace(t, c);
 		} else if (t.type == TokenType.TEXTLITERAL) {
 			return classifyTextLiteral(t, c);
-		} else if (t.type == TokenType.COMMAND) {
+		} else if (t.type == TokenType.STATEMENT) {
 			return classifyCommand(t, c);
 		} else if (t.type == null) { 
 			return classifyNull(t, c);
@@ -123,7 +216,7 @@ public class TemplateTokenizer {
 			t.type = TokenType.LINECONTINUATION;
 			return true;
 		} else {
-			t.type = TokenType.COMMAND;
+			t.type = TokenType.STATEMENT;
 		}
 		return false;
 	}
@@ -208,17 +301,17 @@ public class TemplateTokenizer {
 		return result;
 	}
 
-		public List<Token> insertStartTokens(List<Token> l) {
-			List<Token> result = new ArrayList<Token>();
-			result.add(new Token(TokenType.TEMPLATE, 0, 0));
-			result.add(new Token(TokenType.LINE, 0, 0));
-			for(Token t: l) {
-				result.add(t);
-				if (t.type == TokenType.EOL) {
-					result.add(new Token(TokenType.LINE, t.end, t.end));
-				}
+	List<Token> insertStartTokens(List<Token> l) {
+		List<Token> result = new ArrayList<Token>();
+		result.add(new Token(TokenType.TEMPLATE, 0, 0));
+		result.add(new Token(TokenType.LINE, 0, 0));
+		for(Token t: l) {
+			result.add(t);
+			if (t.type == TokenType.EOL) {
+				result.add(new Token(TokenType.LINE, t.end, t.end));
 			}
-			return result;
 		}
+		return result;
+	}
 
 }

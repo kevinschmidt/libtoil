@@ -4,6 +4,7 @@ options {
   language=Java; 
 }
 
+
 @header {
   package org.libtoil.core;
 }
@@ -12,14 +13,27 @@ options {
   package org.libtoil.core;
 }
 
+@lexer::members{
+  boolean tagMode = false;
+}
+
+template
+      : (EOL | text | statement | whitespace)*
+      ;
+
+whitespace
+  : WS
+  ;
+  
+  
+text 
+  : TEXT
+  ;
+  
+
 statement
     : variable | control | declarations 
     ;
-
-// @;ordered-int-list:temperatures@ 
-// @$foreach:temperatures(maxitems=3)@
-// temp=@.(format="%4.2f")@
-// @$end@
 
 variable
   : AT var_name (OPENP (SEMI* (inline_option))* SEMI* CLOSEP)? AT
@@ -77,54 +91,72 @@ var_type
   : ID
   ;
 
-OPENC
-  : '{' 
+OPENC 
+    : { tagMode }?=>  '{' 
   ;
 
-CLOSEC
-  : '}'
+CLOSEC 
+    : { tagMode }?=> '}' 
   ;
 
 OPENP
-  : '('
+    : { tagMode }?=> '('
   ;
 
 CLOSEP
-  : ')'
+    : { tagMode }?=>  ')'
   ;
   
 EQUALS
-  : '='
+    : { tagMode }?=> '='
   ;
 
 COLON
-  : ':'
+    : { tagMode }?=> ':'
   ;
 
 DOLLAR
-  : '$'
-  ;
-
-HASH
-  : '#'
+    : { tagMode }?=> '$'
   ;
 
 SEMI
-  : ';'
+    : { tagMode }?=> ';'
   ;
     
-AT
-  : '@'
+QUOTED 
+    : { tagMode }?=>  '"' ~'"'* '"'
   ;
     
-QUOTED
-  : '"' ~'"'* '"' 
-  ;
     
 ID
-  : ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'/'|'-'|'.'|'~')*
+    : { tagMode }?=> ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'/'|'-'|'.'|'~')*
   ;    
 
+STATEMENT_LINE_CONTINUE 
+    : { tagMode }?=> '\\' ( ' ' | '\t' )+ '\r'?  '\n' {$channel=HIDDEN;} 
+  ; 
+  
+STATMENT_COMMENT 
+    : { tagMode }?=> '#' ~('\r' | '\n')*  {$channel=HIDDEN;} 
+    ;
+
+
+LINE_CONTINUATION
+  : '@' '\\' ( ' ' | '\t' )+ '\r'?  '\n'  {$channel=HIDDEN;} 
+  ; 
+  
+LINE_COMMENT
+  : '@' '#' ~('\r' | '\n')*  {$channel=HIDDEN;} 
+  ;
+
+AT
+  : '@' { tagMode = !tagMode; } 
+  ;
+  
+TEXT
+: { !tagMode }?=> ~('\r' | '\n' |  ' ' | '\t' | '@')+
+  ;
+  
 EOL
   : '\r'?  '\n'
   ; 
@@ -132,8 +164,5 @@ EOL
 WS
   : ( ' ' | '\t' )+
   ;
-  
-COMMENT 
-    : '#' ~('\r' | '\n')*  {$channel=HIDDEN;} 
-    ;
+
   
