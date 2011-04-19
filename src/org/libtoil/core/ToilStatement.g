@@ -4,7 +4,6 @@ options {
   language=Java; 
 }
 
-
 @header {
   package org.libtoil.core;
 }
@@ -14,17 +13,17 @@ options {
 }
 
 @lexer::members{
-  boolean tagMode = false;
+  boolean statementMode = false;
+  boolean headerMode = false;
 }
 
 template
-      : (EOL | text | statement | whitespace)*
+      : ( text | statement | whitespace |EOL)*
       ;
 
 whitespace
   : WS
   ;
-  
   
 text 
   : TEXT
@@ -35,40 +34,30 @@ statement
     : variable | control | declarations 
     ;
 
+/*
 variable
   : AT var_name (OPENP (SEMI* (inline_option))* SEMI* CLOSEP)? AT
   ;
   
-declarations
-  : AT SEMI (inline_declarations | ( OPENC+ header_declarations CLOSEC+ )) AT
-  ;
-
-header_declarations
-  : ((SEMI | EOL | WS)* (header_variable | header_option))* (SEMI | EOL | WS)*
-  ;
-
-header_variable
-  : var_type (COLON | WS)+ var_name ( (EOL | WS)* OPENP header_declarations CLOSEP)?
-  ;
-
-header_option
-  : option_name WS? EQUALS WS? option_value
-  ;
-
-inline_declarations
-  : (SEMI* (inline_variable | inline_option))* SEMI*
-  ;
-
-inline_variable
-  : var_type COLON var_name (OPENP inline_declarations CLOSEP)?
-  ;
-
-inline_option
-  : option_name EQUALS option_value
-  ;
-
-control 
+  control 
   : AT DOLLAR control_id (COLON var_name)? (OPENP (SEMI* (inline_option))* SEMI* CLOSEP)? AT
+  ;
+*/
+  
+declarations
+  : AT SEMI OPENC+ declaration? (DECL_SEP declaration)* CLOSEC+  AT
+  ;
+
+declarations
+  : (variable | option)?
+  ;
+
+variable
+  : var_type COLON var_name  /*( (EOL | WS)* OPENP header_declarations CLOSEP)? */
+  ;
+
+option
+  : option_name EQUALS option_value
   ;
 
 option_name
@@ -80,7 +69,7 @@ control_id
   ;
   
 var_name
-  : ID
+  : ID 
   ;
 
 option_value
@@ -92,52 +81,52 @@ var_type
   ;
 
 OPENC 
-    : { tagMode }?=>  '{' 
+    : { statementMode }?=>  '{' 
   ;
 
 CLOSEC 
-    : { tagMode }?=> '}' 
+    : { statementMode }?=> '}' 
   ;
 
 OPENP
-    : { tagMode }?=> '('
+    : { statementMode }?=> '('
   ;
 
 CLOSEP
-    : { tagMode }?=>  ')'
+    : { statementMode }?=>  ')'
   ;
   
 EQUALS
-    : { tagMode }?=> '='
+    : { statementMode }?=> '='
   ;
 
 COLON
-    : { tagMode }?=> ':'
+    : { statementMode }?=> ':'
   ;
 
 DOLLAR
-    : { tagMode }?=> '$'
+    : { statementMode }?=> '$'
   ;
 
 SEMI
-    : { tagMode }?=> ';'
+    : { statementMode }?=> ';'
   ;
     
 QUOTED 
-    : { tagMode }?=>  '"' ~'"'* '"'
+    : { statementMode }?=>  '"' ~'"'* '"'
   ;
     
     
 ID
-    : { tagMode }?=> ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'/'|'-'|'.'|'~')*
+    : { statementMode }?=> ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'/'|'-'|'.'|'~')*
   ;    
 
 STATEMENT_LINE_CONTINUE 
-    : { tagMode }?=> '\\' ( ' ' | '\t' )+ '\r'?  '\n' {$channel=HIDDEN;} 
+    : { statementMode }?=> '\\' ( ' ' | '\t' )+ '\r'?  '\n' {$channel=HIDDEN;} 
   ; 
   
 STATMENT_COMMENT 
-    : { tagMode }?=> '#' ~('\r' | '\n')*  {$channel=HIDDEN;} 
+    : { statementMode }?=> '#' ~('\r' | '\n')*  {$channel=HIDDEN;} 
     ;
 
 
@@ -150,11 +139,11 @@ LINE_COMMENT
   ;
 
 AT
-  : '@' { tagMode = !tagMode; } 
+  : '@' { statementMode = !statementMode; } 
   ;
   
 TEXT
-: { !tagMode }?=> ~('\r' | '\n' |  ' ' | '\t' | '@')+
+: { !statementMode }?=> ~('\r' | '\n' |  ' ' | '\t' | '@')+
   ;
   
 EOL
