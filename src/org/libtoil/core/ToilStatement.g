@@ -18,20 +18,23 @@ options {
 }
 
 template
-      : ( text | statement | whitespace |EOL)*
+//      : ( whitespace | text | statement | EOL)*
+      : statement+
       ;
 
 whitespace
   : WS
   ;
   
-text 
-  : TEXT
-  ;
+  
+//text 
+//  : TEXT
+//  ;
   
 
 statement
-    : variable | control | declarations 
+//    : variable | control | declarations 
+    : declaration_statement 
     ;
 
 /*
@@ -44,21 +47,25 @@ variable
   ;
 */
   
-declarations
-  : AT SEMI OPENC+ declaration? (DECL_SEP declaration)* CLOSEC+  AT
+declaration_statement
+  : AT DECL_SEP OPENC? declarations CLOSEC? AT
   ;
 
 declarations
-  : (variable | option)?
+  : declaration (DECL_SEP* declaration)*
+  ;
+
+declaration
+  : variable | option
   ;
 
 variable
-  : var_type COLON var_name  /*( (EOL | WS)* OPENP header_declarations CLOSEP)? */
+  : var_type VAR_SEP var_name ( OPENP declarations CLOSEP )? 
   ;
 
 option
-  : option_name EQUALS option_value
-  ;
+  : option_name OPT_SEP option_value
+  ; 
 
 option_name
   : ID
@@ -66,7 +73,7 @@ option_name
   
 control_id
   : ID
-  ;
+  ; 
   
 var_name
   : ID 
@@ -80,36 +87,40 @@ var_type
   : ID
   ;
 
+OPT_SEP
+    : { statementMode && headerMode }?=> (WS+ '=' WS+)
+    | { statementMode && !headerMode }?=> '='
+    ;
+
+VAR_SEP
+    : { statementMode && headerMode }?=> (WS+ ':' WS+)
+    | { statementMode && !headerMode }?=> ':'
+    ;
+
+DECL_SEP
+    : { statementMode && headerMode }?=> ( ';' | WS | EOL)+
+    | { statementMode && !headerMode }?=> ';'
+  ;
+    
 OPENC 
-    : { statementMode }?=>  '{' 
+    : { statementMode }?=> ( '{'+ DECL_SEP* ) { headerMode = true; } 
   ;
 
 CLOSEC 
-    : { statementMode }?=> '}' 
+    : { statementMode }?=> ( DECL_SEP* '}'+ ) { headerMode = false; } 
   ;
 
 OPENP
-    : { statementMode }?=> '('
-  ;
+    : { statementMode && headerMode }?=> ( WS+ '(' DECL_SEP* )
+    | { statementMode && !headerMode }?=> ( '(' DECL_SEP* )
+  ; 
 
 CLOSEP
-    : { statementMode }?=>  ')'
-  ;
-  
-EQUALS
-    : { statementMode }?=> '='
-  ;
-
-COLON
-    : { statementMode }?=> ':'
+    : { statementMode }?=>  DECL_SEP* ')'
   ;
 
 DOLLAR
     : { statementMode }?=> '$'
-  ;
-
-SEMI
-    : { statementMode }?=> ';'
   ;
     
 QUOTED 
@@ -142,9 +153,9 @@ AT
   : '@' { statementMode = !statementMode; } 
   ;
   
-TEXT
-: { !statementMode }?=> ~('\r' | '\n' |  ' ' | '\t' | '@')+
-  ;
+//TEXT
+//: { !statementMode }?=> ~('\r' | '\n' |  ' ' | '\t' | '@')+
+//  ;
   
 EOL
   : '\r'?  '\n'
