@@ -1,0 +1,48 @@
+@;{
+# Toil template for /etc/resolv.conf
+# Author: Kevin Schmidt, Chris Akre
+
+namespace      = /system/dns
+ordered        = false
+missing-values = null
+case-sensitive = false
+whitespace     = relaxed
+comment-chars  = ";#"
+
+ip-set: nameserver ( 
+	ordered  = true 
+	maxitems = 3
+	required = true
+)
+string:  domain
+unordered-string-set: search
+unordered-namespace-set: sortlist
+	ip: ip (required = true)
+	ip: netmask
+)
+flag:    debug
+integer: ndots
+integer: timeout
+integer: attempts
+flag:    rotate
+flag:    inet6
+}@
+# This file is being controlled by Toil
+# All local changes will be lost
+
+@$foreach:nameserver@
+nameserver @.@
+@$end@
+domain @domain@
+@$line@
+search @$foreach:search(delimiter=" ")@@.@@$end@
+sortlist @$foreach:sortlist(delimiter=" ")@@.ip@@.netmask(format="/%s")@@$end@
+@$line@
+options
+	@debug@
+	ndots: @ndots@
+	timeout: @timeout@
+	attempts: @attempts@
+	@rotate@
+	@inet6@
+@$end@
