@@ -27,16 +27,20 @@ integer: attempts
 flag:    rotate
 flag:    inet6
 }@
+#
 # This file is being controlled by Toil
 # All local changes will be lost
-
+#
 @$foreach:nameserver@
 nameserver @.@
 @$end@
+
 domain @domain@
-@$line@
+
 search @$foreach:search(delimiter=" ")@@.@@$end@
+
 sortlist @$foreach:sortlist(delimiter=" ")@@.ip@@.netmask(format="/%s")@@$end@
+
 @$line@
 options
 	@debug@
