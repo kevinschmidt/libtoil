@@ -9,8 +9,7 @@ case-sensitive = false
 whitespace     = relaxed
 comment-chars  = ";#"
 
-ip-set: nameserver ( 
-	ordered  = true 
+ordered-ip-set: nameserver ( 
 	maxitems = 3
 	required = true
 )
@@ -18,7 +17,7 @@ string:  domain
 unordered-string-set: search
 unordered-namespace-set: sortlist
 	ip: ip (required = true)
-	ip: netmask
+	ip: netmask 
 )
 flag:    debug
 integer: ndots
@@ -39,6 +38,23 @@ domain @domain@
 
 search @$foreach:search(delimiter=" ")@@.@@$end@
 
+
+@# option ONE
+@$section:sortlist(delimiter=" ");sortlist.netmask(format="/%s")@
+sortlist @sortlist@
+@$end@
+
+@# option TWO
+@$line(delimiter=none)@
+sortlist
+	@$space@
+	@$foreach:sortlist(delimiter=" ")@
+		@.ip@
+		@.netmask(format="/%s")@
+	@$end@
+@$end@	
+
+@# option THREE
 sortlist @$foreach:sortlist(delimiter=" ")@@.ip@@.netmask(format="/%s")@@$end@
 
 @$line@
