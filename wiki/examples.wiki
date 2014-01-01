@@ -1,0 +1,101 @@
+== resolve.conf ==
+
+{{{
+@#{
+Toil template for /etc/resolv.conf
+Author: Kevin Schmidt, Chris Akre
+}@
+@;{
+namespace=/system/dns
+ordered=false
+missing-values=null
+case-sensitive=false
+comment-chars=;#
+
+ip-set:~nameserver(ordered=true; maxitems=3; required=true)
+string:~domain()
+unordered-string-set:~search()
+unordered-namespace-set:~sortlist(
+	ip:ip(required=true)
+	ip:netmask(
+		format="/%d"
+		missing-values=blank
+	)
+	format="%s(ip)%s(netmask)
+	
+)
+boolean:~debug(   # option one
+		true-format="debug"
+		false-format=""
+                missing-values=blank
+) 
+integer:~ndots()
+integer:~timeout()
+integer:~attempts()
+flag:~rotate()
+boolean:~inet6()
+}@
+
+# This file is being controlled by Toil
+# All local changes will be lost
+
+@$foreach:~nameserver@
+nameserver @.@
+@$end@
+domain @~domain@
+search @$foreach:~search@@.@ @$end@
+sortlist @~sortlist@
+@$section(ignore-whitespace,delimiter=whitespace)@
+    options 
+    @~debug@                  # option 1
+    ndots:@~ndots@ 
+    timeout:@~timeout@ 
+    attempts:@~attempts@ 
+    @~rotate@     # this is option 2 
+    @$if:~inet6@inet6@$end@  # this is option 3
+@$end$
+}}}
+
+
+==== netmask option one ====
+{{{
+@;{{{
+unordered-namespace-set:~sortlist(
+        delimiter=whitespace
+	ip:ip(required=true)
+	ip:netmask(
+		format="/%s"
+		missing-value=""
+	)
+	format="%s(ip)%s(netmask)"
+)
+}}}@
+sortlist @sortlist@
+}}}
+==== netmask option two ====
+{{{
+@;{{{
+unordered-namespace-set:~sortlist(
+	ip:ip(required=true)
+	ip:netmask(required=false)
+)
+}}}@
+@$line@
+sortlist
+    @$foreach:~sortlist@
+    	@ip@@$if:netmask@/@netmask@@$end@
+    @$end@
+@$end@
+
+}}}
+
+==== netmask option three ====
+{{{
+@;{{{
+unordered-namespace-set:~sortlist(
+	ip:ip(required=true)
+	ip:netmask(required=false)
+)
+}}}@
+sortlist @$foreach:~sortlist@@ip@@netmask(format="/%s")@ @$end@
+}}}

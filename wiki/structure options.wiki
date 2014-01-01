@@ -1,0 +1,147 @@
+== Sample Formatting Rules ==
+
+{{{
+@# This is a sample toil template  
+
+@# Here are some declarations in the context of a header
+@{{{
+namespace=/system/dns
+
+whitespace=relaxed
+
+nameserver:ordered-ip-set
+  :maxitems=3
+  :printable="Name Server"
+  :description="Name Server"
+
+# this is a comment
+}}}@
+
+@# And here are the same declarations outside of a header
+@;namespace=/system/dns@
+@;whitespace=relaxed@
+@;nameserver:ordered-ip-set:maxitems=3:printable="Name Server":description="Name Server"@
+
+@# And for the sake of worst practices, here are the same declarations all on one line
+@;namespace=/system/dns;whitespace=relaxed;nameserver:ordered-ip-set:maxitems=3:printable="Name Server":description="Name Server"@
+
+@# And here, just for the sake of madness, are the same declarations all on one line in a header
+@{{{namespace=/system/dns;whitespace=relaxed;nameserver:ordered-ip-set:maxitems=3:printable="Name Server":description="Name Server";#here is a comment}}}@
+
+@{{{
+# some rules on whitespace and newlines:
+
+namespace=/system/dns   # default
+
+namespace = /system/dns # whitespace is silently stripped
+
+namespace=" /system/dns"
+                        # to include whitespace in a value
+                        # note this is an invalid namespace option
+
+namespace="/system/dns
+                        # this in an error, quotes must be balanced
+
+namespace=\"/system/dns
+                        # \" is a literal quote
+
+namespace="this value
+contains
+two newlines"           # same as "this value\ncontains\ntwo newlines"
+
+namespace               # This is  
+        =/system/dns    # a valid statement
+
+namespace=              # This is invalid, 
+        /system/dns     # an EOL implicitly terminates an assignment
+
+namespace=  \           # This is valid, the backslash  
+        /system/dns     # indicates a line continuation.
+
+# The following three declarations are identical
+
+nameserver:ordered-ip-set
+  :maxitems=3
+  :printable="Name Server"
+  :description="Name Server"
+
+nameserver
+  :ordered-ip-set
+  :maxitems=3
+  :printable="Name Server"
+  :description="Name Server"
+
+nameserver:ordered-ip-set:maxitems=3:printable="Name Server":description="Name Server"
+}}}@
+
+}}}
+
+
+== Template Structure ==
+=== embedded options ===
+This is similar to the CML syntax.  All toil commands would be encapsulated in @ delimiters, and may appear in any location, in any order (from a grammar perspective)
+{{{
+@;whitespace=relaxed@
+@;namespace=/system/dns@
+@!nameserver;ordered-host-set@
+@!domain;string@
+@!attempts;int@
+@!timeout;int@
+
+# this is the main resolv.conf file
+@$foreach nameserver@
+nameserver @.@
+@$end@
+
+domain @domain@
+options attempts:@attempts@ timeout:@timeout@
+}}}
+----
+=== embedded header ===
+This format contains an explicit header section, and all "setup" information for the toil, including field definition, must appear within the header section.  Because the header section is logically separated from the template proper, we can use grammatical constructs omitting the @ delimiter.
+{{{
+@{{{
+whitespace=relaxed
+namespace=/system/dns
+ordered-host-set nameserver
+string domain
+int attempts 
+int timeout
+}}}@
+
+# this is the main resolv.conf file
+@$foreach nameserver@
+nameserver @.@
+@$end@
+
+domain @domain@
+options attempts:@attempts@ timeout:@timeout@
+
+}}}
+
+
+
+
+----
+=== embedded template ===
+This format is the opposite of the previous, it contains an explicit template section where the structure of the modeled text file is located.  Again, separating out the template section means that throughout the rest of the template, we can use grammatical constructs omitting the @ delimiter.
+{{{
+whitespace=relaxed
+namespace=/system/dns
+ordered-host-set nameserver
+string domain
+int attempts 
+int timeout
+
+BEGIN TEMPLATE:XXX
+# this is the main resolv.conf file
+@$foreach nameserver@
+nameserver @.@
+@$end@
+
+domain @domain@
+options attempts:@attempts@ timeout:@timeout@
+XXX
+}}}
+
+== Data Definition Structure ==

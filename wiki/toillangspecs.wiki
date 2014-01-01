@@ -1,0 +1,38 @@
+==TOIL Language Syntax==
+The TOIL language is a template language containing both data definitions that can be extracted from or put into a content file. The language therefore consists of both data definition and control structures. A TOIL template file is split into two parts, header and content.
+
+===Command Wrapper===
+All commands in TOIL are wrapped in the '@' symbol, picked because it is very rarely used multiple times on a line or together with special character.
+
+* Types of Commands
+** **@<name>@**           indicates a variable name
+** **@;<declaration>@**   [[declarations]]
+** **@$<command>@**       [[controlcommands|control commands]]
+** **@#  line comment**   (terminated by EOL)
+** **@#\# ... \#@**       multi-line comment 
+
+===Variables and Namespace===
+[[variables|Variables and Namespace]]
+===Header===
+The header is the place where data is defined and where general settings for the template are placed. The header needs to be at the beginning of the template file (default, optional content and header can be mixed). Header lines cannot contain content, they have to start with "@;" and finish with "@". ";" is the separator for multiple header commands on one line. Comments (@#) are allowed.
+
+{{{
+#!bash
+@;whitespace=relaxed@
+@;namespace=/system/dns@
+}}}
+\\
+===Content===
+The content can be any possible content from Linux configuration files to XML files. It is annotated with control commands (@$), variables (@) or comments (@#). All have to be terminated by an @.
+
+{{{
+#!bash
+# this is the main resolv.conf file
+@$foreach nameserver@
+nameserver @.@
+@$end@
+
+domain @domain@
+options attempts:@attempts@ timeout:@timeout@
+}}}
+\\

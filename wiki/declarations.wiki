@@ -1,0 +1,19 @@
+== Declarations ==
+
+=== Namespace ===
+Deprecated.  
+
+
+=== Whitespace Handling ===
+
+**Explicit Whitespace Handling**
+Declared by: {{{ @;whitespace-handling=explicit@ }}} or {{{ @explicit-whitespace@ }}}. The parser will only perform exact matches of whitespace when processing a file.
+
+**Relaxed Whitespace Handling**
+Declared by: {{{ @;whitespace-handling=relaxed@ }}} or {{{ @relaxed-whitespace@ }}}. The parser will accept any combination of tabs and spaces as a match for whitespace when processing a file.
+
+**Tabular Whitespace Handling**
+Declared by: {{{ @;whitespace-handling=tabular@ }}} or {{{ @tabular-whitespace@ }}}. The parser will accept any combination of tabs and spaces as a match for whitespace when processing a file.  Additionally, when outputting a file, will generate whitespace to maintain the same column location as the source template
+
+**Optional Whitespace Handling**
+Declared by: {{{ @;whitespace-handling=optional@ }}} or {{{ @optional-whitespace@ }}}. The parser will ignore whitespace when processing a file.  

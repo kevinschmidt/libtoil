@@ -1,0 +1,120 @@
+=== toil directive escape delimiter ===
+**Issue**: What to use as the toil escape delimiter
+
+**Alternatives considered**: No serious alternatives considered
+
+**Resolution**: Use "@" ("at" character, ascii code 64) as the toil escape delimiter
+
+=== toil declaration syntax ===
+**Issue**: How to format toil declarations in a template.
+
+**Alternatives considered**: @!<declaration>@, @~<declaration>@, and a few other symbols were considered.
+
+**Resolution**: Use ";" (semicolon character ascii code 59) as the toil escape delimiter.  e.g. 
+**@;**<declaration>[**;**<declaration>]***@**
+
+=== allow both options and variable definitions in declarations ===
+**Issue**: Should the same both options and variable definitions use the same declaration format?
+
+**Alternatives considered**: alternate characters were considered for variable definition, such as @!<definition>@ and @~<definition>@
+
+**Resolution**: Both options and variable definitions would use the same syntax e.g. 
+**@;**<option>|<variable definition>**@**
+
+**Example**
+{{{
+#!bash
+@# this is an option declaration
+@;whitespace-handling=explicit@
+
+@# and this is a variable declaration
+@;int:count()@
+}}}
+\\
+=== order of variable definition ===
+**Issue**: Should variables be defined in the order <type> <name>, or <name> <type>
+
+**Alternatives considered**: The original thought was that variables would be declared in the order <name> <type>.
+
+**Resolution**: Defining variables in the order <type> <name> creates less grammatical ambiguity, and is more consistent with most programming languages.
+
+**Example**
+{{{
+#!bash
+@# this is a variable declaration
+@;int:count()@
+
+@# this is also a variable declaration
+@;unordered-port-set:ports(sequence-delimiter=",")@
+}}}
+\\
+=== multi line declaration ===
+**Issue**: how do we differentiate between one and multi line statements
+
+**Alternatives considered**: @;begin@ EOL EOL @;end@ or @; EOL EOL @
+
+**Resolution**: Use @;{ EOL EOL EOL }@ or @;{{ }}@ or @;{{{ }}}@. This consistent with other languages and easy to understand by the user.
+
+=== multi line separator ===
+**Issue**: how do we differentiate between individual statements in multi line statements
+
+**Alternatives considered**: EOL or ; or : were considered
+
+**Resolution**: For maximum flexibility, both EOL and ; are valid, also in combination.
+
+=== header declaration format ===
+**Issue**: what is the grammar for a "header section" (a section of the template where declarations can be located using relaxed syntax and whitespace for easier readability).
+
+**Alternatives considered**: @$header@ / @$end@ and a few other constructs were considered.
+
+**Resolution**: The format for starting a header section is "@;{{{", and it is terminated with "}}}@", in line with other multi line declarations.
+
+**Example**
+{{{
+#!bash
+@# the following is a header section
+@;{{{
+# this is a comment in a header section
+
+# the following is a option setting in a header section
+namespace = /system/nameservice
+
+# the following is a sequence of options all on one line.
+default-file-path = /etc/passwd; default-file-permission = 446; default-file-owner = root
+
+# the following are variable setting in a header section
+ip: remote_host
+
+
+@# this is also a variable declaration
+@;unordered-port-set:ports(sequence-delimiter=",")@
+}}}@
+}}}
+\\
+=== namespace mandatory ===
+**Issue**: should the namespace be mandatory in a template
+
+**Alternatives considered**: making the namespace an optional variable 
+
+**Resolution**: Namespace should be mandatory in a template, but it can be changed at runtime. Requiring the user to put a namespace statement in the template makes them think about the bigger hierarchy of templates, which will encourage community work and encourage a bigger non-overlapping namespace tree.
+
+=== namespace in variable definitions ===
+**Issue**: how are namespaces represented in a variable definition
+
+**Alternatives considered**: assuming a default namespace with no indication or always a full namespace declaration
+
+**Resolution**: Variable need either to be in full namespace:
+
+{{{
+#!bash
+@;string:/system/dns/domain()@
+}}}
+\\
+or using ~ as an representation of full namespace:
+
+{{{
+#!bash
+@;string:~domain()@
+}}}
+\\
+This will help emphasis that variables are in a namespace that can cross multiple templates, but makes it still easy to differentiate between multiple namespaces in a template.

@@ -1,0 +1,10 @@
+== Welcome to libtoil ==
+
+Welcome to libtoil, the only open-source template language that support both output of content and extraction of data using the same template.
+
+=== [[userguide|User Guide]] ===
+=== [[toillangspecs|TOIL Language Syntax]]===
+=== [[DesignDecisions|TOIL Design Decisions]]===
+=== [[contributions|Contributions]]===
+=== [[examples|Examples]]
+=== [[todo|Todo]]

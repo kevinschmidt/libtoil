@@ -1,0 +1,4 @@
+== Parser == 
+* filter line continuations and corresponding whitespace/eol tokens from stream
+* assemble stream of tokens from iterator into a tree
+* prune tree to remove unwanted lines

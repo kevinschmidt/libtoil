@@ -1,0 +1,1 @@
+removing namespace discussion, replaced by design discussions
